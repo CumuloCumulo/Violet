@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,4 +5,185 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// 用户角色枚举
+enum UserRole {
+  CLIENT      // 当事人
+  WINGMAN     // 军师
+}
+
+// 关系阶段枚举
+enum RelationshipStatus {
+  MATCHING    // 牵线期
+  ICEBREAKING // 破冰期
+  FLIRTING    // 暧昧期
+  ENDED       // 已结束
+}
+
+// 军师介入模式枚举
+enum WingmanMode {
+  SOLO        // 代聊模式
+  PRIVATE     // 私聊模式
+  ASSIST      // 辅助模式
+}
+
+// 军师任务状态枚举
+enum TaskStatus {
+  OPEN        // 开放接取
+  ASSIGNED    // 已分配
+  IN_PROGRESS // 进行中
+  COMPLETED   // 已完成
+  CANCELLED   // 已取消
+}
+
+// 帖子状态枚举
+enum PostStatus {
+  ACTIVE
+  CLOSED
+}
+
+// ==================== 用户 ====================
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique          // 南大邮箱
+  nickname     String                    // 昵称
+  password     String                    // 加密密码
+  avatar       String?                   // 头像URL
+  gender       String?                   // 性别
+  campus       String?                   // 校区
+  grade        String?                   // 年级
+  major        String?                   // 专业
+  interests    String[]                  // 兴趣标签
+  creditScore  Int      @default(0)     // 信用分
+  isActive     Boolean  @default(true)  // 是否活跃
+  lastActiveAt DateTime @default(now()) // 最后活跃时间
+  roles        UserRole[]               // 用户角色（可双重）
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 作为当事人1的关系
+  relationshipsAsUser1 Relationship[] @relation("User1Relationships")
+  // 作为当事人2的关系
+  relationshipsAsUser2 Relationship[] @relation("User2Relationships")
+  // 作为当事人发布的军师任务
+  wingmanTasksClient  WingmanTask[]  @relation("ClientTasks")
+  // 作为军师接取的任务
+  wingmanTasksWingman WingmanTask[]  @relation("WingmanTasks")
+  // 军师分配记录
+  wingmanAssignments  WingmanAssignment[]
+  // 发送的消息
+  sentMessages   Message[]
+  // 发布的帖子
+  posts          Post[]
+  // 帖子回复
+  postReplies    PostReply[]
+}
+
+// ==================== 关系（牵线/破冰/暧昧） ====================
+model Relationship {
+  id         String             @id @default(cuid())
+  user1Id    String                             // 当事人1
+  user2Id    String                             // 当事人2
+  status     RelationshipStatus @default(MATCHING)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  user1      User               @relation("User1Relationships", fields: [user1Id], references: [id])
+  user2      User               @relation("User2Relationships", fields: [user2Id], references: [id])
+  wingmen    WingmanAssignment[]
+  messages   Message[]
+  ratings    Rating[]
+
+  @@unique([user1Id, user2Id])
+}
+
+// ==================== 军师分配 ====================
+model WingmanAssignment {
+  id             String      @id @default(cuid())
+  relationshipId String
+  userId         String                       // 军师用户ID
+  side           Int                           // 1=当事人1的军师, 2=当事人2的军师
+  mode           WingmanMode @default(PRIVATE)
+  joinedAt       DateTime    @default(now())
+  leftAt         DateTime?
+
+  relationship   Relationship @relation(fields: [relationshipId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([relationshipId, side])
+}
+
+// ==================== 军师任务（大厅） ====================
+model WingmanTask {
+  id          String     @id @default(cuid())
+  clientId    String                      // 当事人ID
+  title       String                      // 任务标题
+  description String                      // 任务描述
+  status      TaskStatus @default(OPEN)
+  wingmanId   String?                     // 接单军师ID
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  client      User       @relation("ClientTasks", fields: [clientId], references: [id])
+  wingman     User?      @relation("WingmanTasks", fields: [wingmanId], references: [id])
+}
+
+// ==================== 消息 ====================
+model Message {
+  id             String   @id @default(cuid())
+  relationshipId String
+  senderId       String
+  content        String                      // 消息内容（文字/表情标识符）
+  isSystem       Boolean  @default(false)    // 是否为系统消息
+  requireConfirm Boolean  @default(false)    // 辅助模式：需当事人确认
+  confirmed      Boolean  @default(false)    // 是否已确认
+  createdAt      DateTime @default(now())
+
+  relationship   Relationship @relation(fields: [relationshipId], references: [id])
+  sender         User         @relation(fields: [senderId], references: [id])
+
+  @@index([relationshipId, createdAt])
+}
+
+// ==================== 评价 ====================
+model Rating {
+  id             String   @id @default(cuid())
+  relationshipId String
+  fromUserId     String                       // 评价人
+  toUserId       String                       // 被评价人
+  score          Int                          // -1, 1, 2, 3
+  comment        String?
+  createdAt      DateTime @default(now())
+
+  relationship   Relationship @relation(fields: [relationshipId], references: [id])
+
+  @@unique([relationshipId, fromUserId, toUserId])
+}
+
+// ==================== 帖子大厅 ====================
+model Post {
+  id         String       @id @default(cuid())
+  authorId   String
+  title      String
+  content    String
+  status     PostStatus   @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  author     User         @relation(fields: [authorId], references: [id])
+  replies    PostReply[]
+}
+
+model PostReply {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([postId, createdAt])
 }
