@@ -33,6 +33,7 @@ coverage/
 
 # Prisma
 server/prisma/migrations/
+server/generated/
 
 # Cache
 .cache/
