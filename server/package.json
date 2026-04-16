@@ -13,10 +13,11 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.unit.config.ts",
     "test:watch": "vitest",
+    "test:e2e": "vitest run",
+    "test:all": "vitest run",
     "test:cov": "vitest run --coverage",
-    "test:e2e": "vitest run --config vitest.config.ts",
     "seed": "npx tsx prisma/seed.ts",
     "seed:reset": "npx prisma migrate reset --force && npx tsx prisma/seed.ts"
   },
