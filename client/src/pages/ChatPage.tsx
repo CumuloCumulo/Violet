@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import { useChatStore } from '../stores/chatStore';
 import { ChatPanel } from '../components/ChatPanel';
 
@@ -71,9 +72,7 @@ export function ChatPage({
           onClick={onExit}
           className="text-warm-white/50 hover:text-warm-white transition-colors mr-3"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
+          <ChevronLeft size={20} />
         </button>
         <h1 className="text-warm-white text-[15px] font-medium flex-1" style={{ letterSpacing: '-0.01em' }}>
           破冰聊天
