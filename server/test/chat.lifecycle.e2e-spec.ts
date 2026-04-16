@@ -26,7 +26,11 @@ describe('Lifecycle', () => {
     await cleanSetup();
     const client1 = await fixture.createUser({ nickname: 'C1' });
     const client2 = await fixture.createUser({ nickname: 'C2' });
-    const rel = await fixture.createRelationship(client1.id, client2.id, 'MATCHING');
+    const rel = await fixture.createRelationship(
+      client1.id,
+      client2.id,
+      'MATCHING',
+    );
 
     const res = await fetch(`${url}/api/chat/${rel.id}/status`, {
       method: 'POST',

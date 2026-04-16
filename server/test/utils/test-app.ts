@@ -46,7 +46,7 @@ export class TestApp {
   }
 
   getUrl(): string {
-    const address = this.app.getHttpServer().address() as any;
+    const address = this.app.getHttpServer().address();
     return `http://localhost:${address.port}`;
   }
 }

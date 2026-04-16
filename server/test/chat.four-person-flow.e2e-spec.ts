@@ -57,16 +57,21 @@ describe('Four Person Flow', () => {
     w1.clearEvents();
     c1.clearEvents();
     c2.clearEvents();
-    w1.sendMessage(setup.relationship.id, 'Private advice', 'PRIVATE', setup.client1.id);
+    w1.sendMessage(
+      setup.relationship.id,
+      'Private advice',
+      'PRIVATE',
+      setup.client1.id,
+    );
 
     const c1Private = await c1.waitForEvent('newMessage', 3000);
     expect(c1Private.content).toBe('Private advice');
     expect(c1Private.type).toBe('PRIVATE');
 
     // Client2 should NOT see the private message
-    const c2Events = c2.getEvents('newMessage').filter(
-      (e: any) => e.content === 'Private advice',
-    );
+    const c2Events = c2
+      .getEvents('newMessage')
+      .filter((e: any) => e.content === 'Private advice');
     expect(c2Events.length).toBe(0);
 
     c1.disconnect();

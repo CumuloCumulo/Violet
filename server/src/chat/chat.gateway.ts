@@ -23,7 +23,10 @@ export interface AuthenticatedSocket extends Socket {
 
 @WebSocketGateway({
   cors: {
-    origin: process.env['CORS_ORIGIN']?.split(',') ?? ['http://localhost:5173', 'http://localhost:3000'],
+    origin: process.env['CORS_ORIGIN']?.split(',') ?? [
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ],
     credentials: true,
   },
 })
@@ -38,8 +41,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly lifecycleService: ChatLifecycleService,
   ) {}
 
-  async handleConnection(client: AuthenticatedSocket) {
-    const userId = client.handshake.auth?.userId ?? client.handshake.query?.userId;
+  handleConnection(client: AuthenticatedSocket) {
+    const userId =
+      client.handshake.auth?.userId ?? client.handshake.query?.userId;
     if (!userId || typeof userId !== 'string') {
       client.disconnect(true);
       return;
@@ -72,13 +76,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { relationshipId } = data;
     const userId = client.data.userId;
 
-    const member = await this.roomService.validateMembership(relationshipId, userId);
+    const member = await this.roomService.validateMembership(
+      relationshipId,
+      userId,
+    );
     if (!member) {
       client.emit('error', { code: 'FORBIDDEN', message: 'Not a room member' });
       return;
     }
 
-    const canSend = await this.roomService.canSendToRoom(relationshipId, userId, 'MAIN');
+    const canSend = await this.roomService.canSendToRoom(
+      relationshipId,
+      userId,
+      'MAIN',
+    );
     if (!canSend.allowed) {
       client.emit('error', { code: 'FORBIDDEN', message: canSend.reason });
       return;
@@ -89,11 +100,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.data.relationshipId = relationshipId;
     client.data.role = member.role;
 
-    await this.presenceService.setOnline(userId, client.id, relationshipId, member.role);
+    await this.presenceService.setOnline(
+      userId,
+      client.id,
+      relationshipId,
+      member.role,
+    );
 
     const messages = await this.chatService.getMessages(relationshipId, userId);
 
-    const { wingmanMode1, wingmanMode2 } = await this.roomService.getWingmanModes(relationshipId);
+    const { wingmanMode1, wingmanMode2 } =
+      await this.roomService.getWingmanModes(relationshipId);
     const visibleMessages = messages.filter((msg) => {
       const vis = this.chatService.computeVisibility(
         msg,
@@ -120,35 +137,58 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { relationshipId: string; content: string; type: string; targetUserId?: string },
+    @MessageBody()
+    data: {
+      relationshipId: string;
+      content: string;
+      type: string;
+      targetUserId?: string;
+    },
   ) {
     const userId = client.data.userId;
     const { relationshipId, content, type, targetUserId } = data;
 
     if (!content || content.trim().length === 0 || content.length > 2000) {
-      client.emit('error', { code: 'VALIDATION', message: 'Invalid message content' });
+      client.emit('error', {
+        code: 'VALIDATION',
+        message: 'Invalid message content',
+      });
       return;
     }
 
-    const canSend = await this.roomService.canSendToRoom(relationshipId, userId, type);
+    const canSend = await this.roomService.canSendToRoom(
+      relationshipId,
+      userId,
+      type,
+    );
     if (!canSend.allowed) {
       client.emit('error', { code: 'FORBIDDEN', message: canSend.reason });
       return;
     }
 
-    const member = await this.roomService.validateMembership(relationshipId, userId);
+    const member = await this.roomService.validateMembership(
+      relationshipId,
+      userId,
+    );
     if (!member) return;
 
     let effectiveSenderId = userId;
     if (member.role === 'wingman1' || member.role === 'wingman2') {
       const mode = member.wingmanMode;
       if (type === 'MAIN' && mode === 'SOLO') {
-        const relationship = await this.chatService.findRelationshipById(relationshipId);
+        const relationship =
+          await this.chatService.findRelationshipById(relationshipId);
         if (relationship) {
-          effectiveSenderId = member.role === 'wingman1' ? relationship.user1Id : relationship.user2Id;
+          effectiveSenderId =
+            member.role === 'wingman1'
+              ? relationship.user1Id
+              : relationship.user2Id;
         }
       } else if (type === 'MAIN' && mode === 'PRIVATE') {
-        client.emit('error', { code: 'FORBIDDEN', message: 'Wingman in PRIVATE mode cannot send MAIN messages' });
+        client.emit('error', {
+          code: 'FORBIDDEN',
+          message: 'Wingman in PRIVATE mode cannot send MAIN messages',
+        });
         return;
       }
     }
@@ -176,21 +216,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const member = await this.roomService.validateMembership(relationshipId, userId);
+    const member = await this.roomService.validateMembership(
+      relationshipId,
+      userId,
+    );
     if (!member) return;
 
     if (!member.role.startsWith('wingman')) {
       return;
     }
     if (member.wingmanMode !== 'ASSIST') {
-      client.emit('error', { code: 'FORBIDDEN', message: 'Only ASSIST mode wingmen can draft messages' });
+      client.emit('error', {
+        code: 'FORBIDDEN',
+        message: 'Only ASSIST mode wingmen can draft messages',
+      });
       return;
     }
 
-    const relationship = await this.chatService.findRelationshipById(relationshipId);
+    const relationship =
+      await this.chatService.findRelationshipById(relationshipId);
     if (!relationship) return;
 
-    const targetClientId = member.role === 'wingman1' ? relationship.user1Id : relationship.user2Id;
+    const targetClientId =
+      member.role === 'wingman1' ? relationship.user1Id : relationship.user2Id;
 
     const message = await this.chatService.createMessage({
       relationshipId,
@@ -201,7 +249,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       requireConfirm: true,
     });
 
-    await this.emitToUsers(relationshipId, [userId, targetClientId], 'newMessage', message);
+    await this.emitToUsers(
+      relationshipId,
+      [userId, targetClientId],
+      'newMessage',
+      message,
+    );
   }
 
   @SubscribeMessage('confirmMessage')
@@ -214,7 +267,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const confirmed = await this.chatService.confirmMessage(messageId, userId);
     if (!confirmed) {
-      client.emit('error', { code: 'NOT_FOUND', message: 'Message not found or cannot be confirmed' });
+      client.emit('error', {
+        code: 'NOT_FOUND',
+        message: 'Message not found or cannot be confirmed',
+      });
       return;
     }
 
@@ -226,7 +282,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { messageId: string; relationshipId: string },
   ) {
-    const userId = client.data.userId;
+    const _userId = client.data.userId;
     const { messageId, relationshipId } = data;
 
     const message = await this.chatService.findMessageById(messageId);
@@ -234,7 +290,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.chatService.rejectMessage(messageId);
 
     if (message) {
-      await this.emitToUsers(relationshipId, [message.senderId], 'messageRejected', { messageId });
+      await this.emitToUsers(
+        relationshipId,
+        [message.senderId],
+        'messageRejected',
+        { messageId },
+      );
     }
 
     client.emit('messageRejected', { messageId });
@@ -242,10 +303,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('forwardMessage')
   async handleForwardMessage(
-    @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { relationshipId: string; originalMessageId: string; targetUserId: string },
+    @ConnectedSocket() _client: AuthenticatedSocket,
+    @MessageBody()
+    data: {
+      relationshipId: string;
+      originalMessageId: string;
+      targetUserId: string;
+    },
   ) {
-    const userId = client.data.userId;
+    const userId = _client.data.userId;
     const { relationshipId, originalMessageId, targetUserId } = data;
 
     const original = await this.chatService.findMessageById(originalMessageId);
@@ -262,35 +328,55 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       targetUserId,
     });
 
-    await this.emitToUsers(relationshipId, [userId, targetUserId], 'newMessage', forwarded);
+    await this.emitToUsers(
+      relationshipId,
+      [userId, targetUserId],
+      'newMessage',
+      forwarded,
+    );
   }
 
   @SubscribeMessage('switchMode')
   async handleSwitchMode(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { relationshipId: string; wingmanId: string; mode: string },
+    @MessageBody()
+    data: { relationshipId: string; wingmanId: string; mode: string },
   ) {
     const userId = client.data.userId;
     const { relationshipId, wingmanId, mode } = data;
 
-    const assignment = await this.chatService.findWingmanAssignment(relationshipId, wingmanId);
+    const assignment = await this.chatService.findWingmanAssignment(
+      relationshipId,
+      wingmanId,
+    );
 
     if (!assignment) {
-      client.emit('error', { code: 'NOT_FOUND', message: 'Wingman assignment not found' });
+      client.emit('error', {
+        code: 'NOT_FOUND',
+        message: 'Wingman assignment not found',
+      });
       return;
     }
 
-    const relationship = await this.chatService.findRelationshipById(relationshipId);
+    const relationship =
+      await this.chatService.findRelationshipById(relationshipId);
     if (!relationship) return;
 
-    const expectedClientId = assignment.side === 1 ? relationship.user1Id : relationship.user2Id;
+    const expectedClientId =
+      assignment.side === 1 ? relationship.user1Id : relationship.user2Id;
     if (userId !== expectedClientId) {
-      client.emit('error', { code: 'FORBIDDEN', message: 'Only the owning client can switch mode' });
+      client.emit('error', {
+        code: 'FORBIDDEN',
+        message: 'Only the owning client can switch mode',
+      });
       return;
     }
 
     if (relationship.status !== 'ICEBREAKING') {
-      client.emit('error', { code: 'FORBIDDEN', message: 'Cannot switch mode outside ICEBREAKING phase' });
+      client.emit('error', {
+        code: 'FORBIDDEN',
+        message: 'Cannot switch mode outside ICEBREAKING phase',
+      });
       return;
     }
 
@@ -321,10 +407,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!event) return;
 
-    const roomId = this.roomService.getRoomId(relationshipId);
+    const _roomId = this.roomService.getRoomId(relationshipId);
 
     if (event.type === 'roomClosed') {
-      this.server.to(roomId).emit('roomClosed', {
+      this.server.to(_roomId).emit('roomClosed', {
         relationshipId,
         reason: event.reason,
         message: event.message,
@@ -332,24 +418,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     if (event.type === 'roomEnded') {
-      this.server.to(roomId).emit('roomClosed', {
+      this.server.to(_roomId).emit('roomClosed', {
         relationshipId,
         reason: event.reason,
         message: event.message,
       });
 
       // Disconnect all sockets in the room
-      const sockets = await this.server.in(roomId).fetchSockets();
+      const sockets = await this.server.in(_roomId).fetchSockets();
       for (const socket of sockets) {
         socket.disconnect(true);
       }
     }
   }
 
-  private async broadcastToVisibleMembers(relationshipId: string, message: any) {
-    const roomId = this.roomService.getRoomId(relationshipId);
+  private async broadcastToVisibleMembers(
+    relationshipId: string,
+    message: any,
+  ) {
     const members = await this.roomService.getRoomMembers(relationshipId);
-    const { wingmanMode1, wingmanMode2 } = await this.roomService.getWingmanModes(relationshipId);
+    const { wingmanMode1, wingmanMode2 } =
+      await this.roomService.getWingmanModes(relationshipId);
 
     for (const m of members) {
       const vis = this.chatService.computeVisibility(
@@ -368,7 +457,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  private async emitToUsers(relationshipId: string, userIds: string[], event: string, data: any) {
+  private async emitToUsers(
+    relationshipId: string,
+    userIds: string[],
+    event: string,
+    data: any,
+  ) {
     const roomId = this.roomService.getRoomId(relationshipId);
     const sockets = await this.server.in(roomId).fetchSockets();
     for (const sock of sockets) {

@@ -52,17 +52,11 @@ export class ChatService {
         { type: 'SYSTEM' },
         {
           type: 'PRIVATE',
-          OR: [
-            { senderId: userId },
-            { targetUserId: userId },
-          ],
+          OR: [{ senderId: userId }, { targetUserId: userId }],
         },
         {
           type: 'PENDING',
-          OR: [
-            { senderId: userId },
-            { targetUserId: userId },
-          ],
+          OR: [{ senderId: userId }, { targetUserId: userId }],
         },
       ],
     };

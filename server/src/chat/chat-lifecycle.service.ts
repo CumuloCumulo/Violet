@@ -38,7 +38,7 @@ export class ChatLifecycleService {
       throw new Error('Relationship not found');
     }
 
-    const oldStatus = relationship.status as RelationshipStatus;
+    const oldStatus = relationship.status;
     if (oldStatus === newStatus) return null;
 
     await this.prisma.relationship.update({
@@ -94,10 +94,7 @@ export class ChatLifecycleService {
   }
 
   private async onEnded(relationshipId: string): Promise<LifecycleEvent> {
-    await this.chatService.createSystemMessage(
-      relationshipId,
-      '聊天已结束。',
-    );
+    await this.chatService.createSystemMessage(relationshipId, '聊天已结束。');
 
     await this.prisma.wingmanAssignment.updateMany({
       where: { relationshipId, leftAt: null },

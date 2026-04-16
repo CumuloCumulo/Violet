@@ -43,7 +43,10 @@ export class RoomService {
     return members;
   }
 
-  async validateMembership(relationshipId: string, userId: string): Promise<RoomMember | null> {
+  async validateMembership(
+    relationshipId: string,
+    userId: string,
+  ): Promise<RoomMember | null> {
     const members = await this.getRoomMembers(relationshipId);
     return members.find((m) => m.userId === userId) ?? null;
   }
@@ -51,7 +54,7 @@ export class RoomService {
   async canSendToRoom(
     relationshipId: string,
     userId: string,
-    messageType: string,
+    _messageType: string,
   ): Promise<{ allowed: boolean; reason?: string }> {
     const relationship = await this.prisma.relationship.findUnique({
       where: { id: relationshipId },
@@ -62,7 +65,10 @@ export class RoomService {
     }
 
     if (relationship.status !== 'ICEBREAKING') {
-      return { allowed: false, reason: 'Relationship is not in ICEBREAKING phase' };
+      return {
+        allowed: false,
+        reason: 'Relationship is not in ICEBREAKING phase',
+      };
     }
 
     const member = await this.validateMembership(relationshipId, userId);

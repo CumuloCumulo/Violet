@@ -24,7 +24,11 @@ describe('Wingman Modes', () => {
   ) {
     await app.cleanup();
     await fixture.ensureSystemUser();
-    return fixture.setupFourPersonRoom('ICEBREAKING', wingman1Mode, wingman2Mode);
+    return fixture.setupFourPersonRoom(
+      'ICEBREAKING',
+      wingman1Mode,
+      wingman2Mode,
+    );
   }
 
   async function waitDisconnect(...clients: TestClient[]) {
@@ -91,9 +95,9 @@ describe('Wingman Modes', () => {
     expect(pending.content).toBe('How about this line?');
 
     // Client2 should NOT see the draft
-    const c2DraftEvents = c2.getEvents('newMessage').filter(
-      (e: any) => e.content === 'How about this line?',
-    );
+    const c2DraftEvents = c2
+      .getEvents('newMessage')
+      .filter((e: any) => e.content === 'How about this line?');
     expect(c2DraftEvents.length).toBe(0);
 
     // Client confirms

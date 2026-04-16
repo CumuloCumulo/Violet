@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Param, Body, Query, Req, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  Req,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ChatService } from './chat.service.js';
 import { PresenceService } from './presence.service.js';
 import { RoomService } from './room.service.js';
@@ -33,12 +43,16 @@ export class ChatController {
       Math.min(parsedLimit, 100),
     );
 
-    const member = await this.roomService.validateMembership(relationshipId, userId);
+    const member = await this.roomService.validateMembership(
+      relationshipId,
+      userId,
+    );
     if (!member) {
       throw new UnauthorizedException('Not a room member');
     }
 
-    const { wingmanMode1, wingmanMode2 } = await this.roomService.getWingmanModes(relationshipId);
+    const { wingmanMode1, wingmanMode2 } =
+      await this.roomService.getWingmanModes(relationshipId);
     const visibleMessages = messages.filter((msg) => {
       const vis = this.chatService.computeVisibility(
         msg,
@@ -63,21 +77,23 @@ export class ChatController {
       throw new UnauthorizedException('Missing user identity');
     }
 
-    const member = await this.roomService.validateMembership(relationshipId, userId);
+    const member = await this.roomService.validateMembership(
+      relationshipId,
+      userId,
+    );
     if (!member) {
       throw new UnauthorizedException('Not a room member');
     }
 
     const members = await this.roomService.getRoomMembers(relationshipId);
-    const onlineUserIds = await this.presenceService.getOnlineMembers(relationshipId);
+    const onlineUserIds =
+      await this.presenceService.getOnlineMembers(relationshipId);
 
-    const presence = await Promise.all(
-      members.map(async (m) => ({
-        userId: m.userId,
-        role: m.role,
-        online: onlineUserIds.includes(m.userId),
-      })),
-    );
+    const presence = members.map((m) => ({
+      userId: m.userId,
+      role: m.role,
+      online: onlineUserIds.includes(m.userId),
+    }));
 
     return { presence };
   }
@@ -89,7 +105,9 @@ export class ChatController {
   ) {
     const validStatuses = ['MATCHING', 'ICEBREAKING', 'FLIRTING', 'ENDED'];
     if (!validStatuses.includes(body.status)) {
-      throw new BadRequestException(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      throw new BadRequestException(
+        `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+      );
     }
 
     const event = await this.lifecycleService.transitionStatus(

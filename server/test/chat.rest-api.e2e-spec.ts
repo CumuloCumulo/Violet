@@ -12,7 +12,7 @@ describe('REST API', () => {
     fixture = new Fixture(app.prisma);
 
     const httpServer = app.app.getHttpServer();
-    const address = httpServer.address() as any;
+    const address = httpServer.address();
     baseUrl = `http://localhost:${address.port}`;
   });
 

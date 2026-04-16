@@ -18,16 +18,18 @@ export class Fixture {
     });
   }
 
-  async createUser(overrides: Partial<{
-    email: string;
-    nickname: string;
-    password: string;
-    gender: string;
-    campus: string;
-    grade: string;
-    major: string;
-    roles: string[];
-  }> = {}) {
+  async createUser(
+    overrides: Partial<{
+      email: string;
+      nickname: string;
+      password: string;
+      gender: string;
+      campus: string;
+      grade: string;
+      major: string;
+      roles: string[];
+    }> = {},
+  ) {
     const id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     return this.prisma.user.create({
       data: {
@@ -79,15 +81,41 @@ export class Fixture {
     wingman1Mode: WingmanMode = 'PRIVATE',
     wingman2Mode: WingmanMode = 'PRIVATE',
   ) {
-    const client1 = await this.createUser({ nickname: '当事人1', roles: ['CLIENT'] });
-    const client2 = await this.createUser({ nickname: '当事人2', roles: ['CLIENT'] });
-    const wingman1 = await this.createUser({ nickname: '军师1', roles: ['CLIENT', 'WINGMAN'] });
-    const wingman2 = await this.createUser({ nickname: '军师2', roles: ['CLIENT', 'WINGMAN'] });
+    const client1 = await this.createUser({
+      nickname: '当事人1',
+      roles: ['CLIENT'],
+    });
+    const client2 = await this.createUser({
+      nickname: '当事人2',
+      roles: ['CLIENT'],
+    });
+    const wingman1 = await this.createUser({
+      nickname: '军师1',
+      roles: ['CLIENT', 'WINGMAN'],
+    });
+    const wingman2 = await this.createUser({
+      nickname: '军师2',
+      roles: ['CLIENT', 'WINGMAN'],
+    });
 
-    const relationship = await this.createRelationship(client1.id, client2.id, relStatus);
+    const relationship = await this.createRelationship(
+      client1.id,
+      client2.id,
+      relStatus,
+    );
 
-    const assignment1 = await this.createWingmanAssignment(relationship.id, wingman1.id, 1, wingman1Mode);
-    const assignment2 = await this.createWingmanAssignment(relationship.id, wingman2.id, 2, wingman2Mode);
+    const assignment1 = await this.createWingmanAssignment(
+      relationship.id,
+      wingman1.id,
+      1,
+      wingman1Mode,
+    );
+    const assignment2 = await this.createWingmanAssignment(
+      relationship.id,
+      wingman2.id,
+      2,
+      wingman2Mode,
+    );
 
     return {
       client1,

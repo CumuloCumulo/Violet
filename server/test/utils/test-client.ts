@@ -44,8 +44,18 @@ export class TestClient {
     return this.waitForEvent('roomJoined', 5000);
   }
 
-  sendMessage(relationshipId: string, content: string, type: string = 'MAIN', targetUserId?: string) {
-    this.socket.emit('sendMessage', { relationshipId, content, type, targetUserId });
+  sendMessage(
+    relationshipId: string,
+    content: string,
+    type: string = 'MAIN',
+    targetUserId?: string,
+  ) {
+    this.socket.emit('sendMessage', {
+      relationshipId,
+      content,
+      type,
+      targetUserId,
+    });
   }
 
   draftMessage(relationshipId: string, content: string) {
@@ -60,8 +70,16 @@ export class TestClient {
     this.socket.emit('rejectMessage', { messageId, relationshipId });
   }
 
-  forwardMessage(relationshipId: string, originalMessageId: string, targetUserId: string) {
-    this.socket.emit('forwardMessage', { relationshipId, originalMessageId, targetUserId });
+  forwardMessage(
+    relationshipId: string,
+    originalMessageId: string,
+    targetUserId: string,
+  ) {
+    this.socket.emit('forwardMessage', {
+      relationshipId,
+      originalMessageId,
+      targetUserId,
+    });
   }
 
   switchMode(relationshipId: string, wingmanId: string, mode: string) {
@@ -82,7 +100,11 @@ export class TestClient {
       }
 
       const timer = setTimeout(() => {
-        reject(new Error(`Timeout waiting for event "${event}" (user: ${this.userId})`));
+        reject(
+          new Error(
+            `Timeout waiting for event "${event}" (user: ${this.userId})`,
+          ),
+        );
       }, timeout);
 
       const handler = (...args: any[]) => {

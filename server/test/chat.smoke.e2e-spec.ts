@@ -32,7 +32,7 @@ describe('Chat Smoke Test', () => {
     const setup = await fixture.setupFourPersonRoom();
 
     const httpServer = app.app.getHttpServer();
-    const address = httpServer.address() as any;
+    const address = httpServer.address();
     const url = `http://localhost:${address.port}`;
 
     const client1 = new TestClient(url, setup.client1.id);

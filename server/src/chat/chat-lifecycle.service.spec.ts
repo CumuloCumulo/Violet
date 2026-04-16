@@ -1,5 +1,4 @@
 import { ChatLifecycleService } from './chat-lifecycle.service';
-import type { LifecycleEvent } from './chat-lifecycle.service';
 
 describe('ChatLifecycleService', () => {
   let service: ChatLifecycleService;
@@ -47,10 +46,16 @@ describe('ChatLifecycleService', () => {
         id: relationshipId,
         status: 'MATCHING',
       });
-      mockPrisma.relationship.update.mockResolvedValue({ id: relationshipId, status: 'ICEBREAKING' });
+      mockPrisma.relationship.update.mockResolvedValue({
+        id: relationshipId,
+        status: 'ICEBREAKING',
+      });
       mockChatService.createSystemMessage.mockResolvedValue({});
 
-      const result = await service.transitionStatus(relationshipId, 'ICEBREAKING');
+      const result = await service.transitionStatus(
+        relationshipId,
+        'ICEBREAKING',
+      );
 
       expect(result).not.toBeNull();
       expect(result!.type).toBe('roomOpened');
@@ -66,7 +71,10 @@ describe('ChatLifecycleService', () => {
         id: relationshipId,
         status: 'ICEBREAKING',
       });
-      mockPrisma.relationship.update.mockResolvedValue({ id: relationshipId, status: 'FLIRTING' });
+      mockPrisma.relationship.update.mockResolvedValue({
+        id: relationshipId,
+        status: 'FLIRTING',
+      });
       mockPrisma.wingmanAssignment.updateMany.mockResolvedValue({ count: 2 });
       mockChatService.createSystemMessage.mockResolvedValue({});
 
@@ -86,7 +94,10 @@ describe('ChatLifecycleService', () => {
         id: relationshipId,
         status: 'ICEBREAKING',
       });
-      mockPrisma.relationship.update.mockResolvedValue({ id: relationshipId, status: 'ENDED' });
+      mockPrisma.relationship.update.mockResolvedValue({
+        id: relationshipId,
+        status: 'ENDED',
+      });
       mockChatService.createSystemMessage.mockResolvedValue({});
       mockPrisma.wingmanAssignment.updateMany.mockResolvedValue({ count: 2 });
       mockRoomService.getRoomMembers.mockResolvedValue([
@@ -109,7 +120,10 @@ describe('ChatLifecycleService', () => {
         status: 'ICEBREAKING',
       });
 
-      const result = await service.transitionStatus(relationshipId, 'ICEBREAKING');
+      const result = await service.transitionStatus(
+        relationshipId,
+        'ICEBREAKING',
+      );
 
       expect(result).toBeNull();
     });

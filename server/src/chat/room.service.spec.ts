@@ -13,7 +13,9 @@ describe('RoomService', () => {
     });
 
     it('should handle CUID format', () => {
-      expect(service.getRoomId('clx123abc456')).toBe('relationship:clx123abc456');
+      expect(service.getRoomId('clx123abc456')).toBe(
+        'relationship:clx123abc456',
+      );
     });
   });
 });
