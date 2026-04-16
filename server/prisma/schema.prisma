@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // 用户角色枚举
@@ -43,6 +43,14 @@ enum PostStatus {
   CLOSED
 }
 
+// 消息类型枚举
+enum MessageType {
+  MAIN        // 主窗口消息
+  PRIVATE     // 私聊消息（当事人↔己方军师）
+  PENDING     // 待确认消息（军师草拟，辅助模式）
+  SYSTEM      // 系统消息
+}
+
 // ==================== 用户 ====================
 model User {
   id           String   @id @default(cuid())
@@ -78,6 +86,8 @@ model User {
   posts          Post[]
   // 帖子回复
   postReplies    PostReply[]
+  // 作为目标的私聊消息
+  targetedMessages Message[] @relation("TargetedMessages")
 }
 
 // ==================== 关系（牵线/破冰/暧昧） ====================
@@ -131,17 +141,20 @@ model WingmanTask {
 
 // ==================== 消息 ====================
 model Message {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   relationshipId String
   senderId       String
-  content        String                      // 消息内容（文字/表情标识符）
-  isSystem       Boolean  @default(false)    // 是否为系统消息
-  requireConfirm Boolean  @default(false)    // 辅助模式：需当事人确认
-  confirmed      Boolean  @default(false)    // 是否已确认
-  createdAt      DateTime @default(now())
+  content        String                       // 消息内容（文字/表情标识符）
+  type           MessageType @default(MAIN)   // 消息类型
+  targetUserId   String?                      // PRIVATE 消息的目标用户
+  isSystem       Boolean     @default(false)  // 是否为系统消息
+  requireConfirm Boolean     @default(false)  // 辅助模式：需当事人确认
+  confirmed      Boolean     @default(false)  // 是否已确认
+  createdAt      DateTime    @default(now())
 
   relationship   Relationship @relation(fields: [relationshipId], references: [id])
   sender         User         @relation(fields: [senderId], references: [id])
+  targetUser     User?        @relation("TargetedMessages", fields: [targetUserId], references: [id])
 
   @@index([relationshipId, createdAt])
 }
