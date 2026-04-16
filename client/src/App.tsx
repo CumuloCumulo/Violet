@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
 import { ChatPage } from './pages/ChatPage';
 
 const DEV_MODE = import.meta.env.DEV;
@@ -24,25 +25,51 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-near-black flex items-center justify-center px-4">
+    <div className="min-h-screen login-gradient flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <h1 className="text-white text-[40px] font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+        {/* Brand */}
+        <motion.div
+          className="text-center mb-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1
+            className="text-warm-white text-[52px] font-light tracking-tight"
+            style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}
+          >
             Violet
           </h1>
-          <p className="mt-2 text-white/50 text-sm tracking-tight">
-            NJU代恋 — 校园恋爱代聊平台
-          </p>
+          <motion.p
+            className="mt-2 text-warm-white-50 text-sm"
+            style={{ letterSpacing: '-0.01em' }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            对话即心跳 — 校园恋爱代聊平台
+          </motion.p>
           {DEV_MODE && (
-            <span className="inline-block mt-2 text-[11px] text-apple-blue bg-apple-blue/10 px-2 py-0.5 rounded-full">
+            <motion.span
+              className="inline-block mt-2 text-[11px] text-violet-light px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(139, 92, 246, 0.15)' }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+            >
               DEV MODE
-            </span>
+            </motion.span>
           )}
-        </div>
+        </motion.div>
 
+        {/* Form */}
         <div className="space-y-4">
-          <div>
-            <label className="block text-white/50 text-xs mb-1.5 tracking-tight">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+          >
+            <label className="block text-warm-white-50 text-xs mb-1.5" style={{ letterSpacing: '-0.01em' }}>
               用户 ID
             </label>
             <input
@@ -50,12 +77,28 @@ function App() {
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               placeholder="输入你的用户 ID"
-              className="w-full h-11 px-4 rounded-xl bg-dark-surface text-white text-sm placeholder:text-white/30 outline-none focus:ring-2 focus:ring-apple-blue/40 transition-shadow"
+              className="w-full h-11 px-4 rounded-xl text-sm text-warm-white placeholder:text-warm-white-30 outline-none transition-shadow"
+              style={{
+                background: '#1a1525',
+                border: '1px solid rgba(139, 92, 246, 0.15)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.4)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
+              }}
             />
-          </div>
+          </motion.div>
 
-          <div>
-            <label className="block text-white/50 text-xs mb-1.5 tracking-tight">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+          >
+            <label className="block text-warm-white-50 text-xs mb-1.5" style={{ letterSpacing: '-0.01em' }}>
               关系 ID
             </label>
             <input
@@ -63,12 +106,28 @@ function App() {
               value={relationshipId}
               onChange={(e) => setRelationshipId(e.target.value)}
               placeholder="输入关系 ID"
-              className="w-full h-11 px-4 rounded-xl bg-dark-surface text-white text-sm placeholder:text-white/30 outline-none focus:ring-2 focus:ring-apple-blue/40 transition-shadow"
+              className="w-full h-11 px-4 rounded-xl text-sm text-warm-white placeholder:text-warm-white-30 outline-none transition-shadow"
+              style={{
+                background: '#1a1525',
+                border: '1px solid rgba(139, 92, 246, 0.15)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.4)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
+              }}
             />
-          </div>
+          </motion.div>
 
-          <div>
-            <label className="block text-white/50 text-xs mb-1.5 tracking-tight">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.6 }}
+          >
+            <label className="block text-warm-white-50 text-xs mb-1.5" style={{ letterSpacing: '-0.01em' }}>
               军师 ID（可选）
             </label>
             <input
@@ -76,17 +135,35 @@ function App() {
               value={wingmanId}
               onChange={(e) => setWingmanId(e.target.value)}
               placeholder="输入军师用户 ID"
-              className="w-full h-11 px-4 rounded-xl bg-dark-surface text-white text-sm placeholder:text-white/30 outline-none focus:ring-2 focus:ring-apple-blue/40 transition-shadow"
+              className="w-full h-11 px-4 rounded-xl text-sm text-warm-white placeholder:text-warm-white-30 outline-none transition-shadow"
+              style={{
+                background: '#1a1525',
+                border: '1px solid rgba(139, 92, 246, 0.15)',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.4)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
+              }}
             />
-          </div>
+          </motion.div>
 
-          <button
+          <motion.button
             onClick={() => setStarted(true)}
             disabled={!userId.trim() || !relationshipId.trim()}
-            className="w-full h-11 rounded-xl bg-apple-blue text-white text-sm font-medium disabled:opacity-30 hover:bg-apple-blue-hover transition-colors mt-2"
+            className="w-full h-11 rounded-xl text-sm font-medium text-warm-white disabled:opacity-30 transition-colors mt-2"
+            style={{ background: '#8b5cf6' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#7c3aed'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#8b5cf6'; }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.8 }}
           >
             进入聊天
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>

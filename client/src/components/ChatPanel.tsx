@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useChatStore, type ChatMessage } from '../stores/chatStore';
 import { MessageInput } from './MessageInput';
 import { PresenceIndicator } from './PresenceIndicator';
@@ -36,7 +37,6 @@ export function ChatPanel({
     if (messageType === 'MAIN') {
       return m.type === 'MAIN' || m.type === 'SYSTEM' || m.type === 'PENDING';
     }
-    // PRIVATE panel shows PRIVATE type messages
     return m.type === 'PRIVATE';
   });
 
@@ -54,7 +54,6 @@ export function ChatPanel({
 
     isAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
 
-    // Load history when scrolled to top
     if (el.scrollTop < 60 && !loadingHistory && filteredMessages.length > 0) {
       loadHistory();
     }
@@ -95,10 +94,13 @@ export function ChatPanel({
   );
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full" style={{ background: '#0c0a14' }}>
       {/* Panel Header */}
-      <div className="flex items-center justify-between px-4 h-12 border-b border-gray-200/60 shrink-0">
-        <h2 className="text-[15px] font-semibold text-near-black tracking-tight">
+      <div
+        className="flex items-center justify-between px-4 h-12 shrink-0 border-b"
+        style={{ background: '#0f0d17', borderColor: 'rgba(139, 92, 246, 0.1)' }}
+      >
+        <h2 className="text-[15px] font-medium text-warm-white" style={{ letterSpacing: '-0.01em' }}>
           {title}
         </h2>
         {presenceKey && (
@@ -113,20 +115,22 @@ export function ChatPanel({
         className="flex-1 overflow-y-auto scrollbar-thin px-4 py-3 space-y-1"
       >
         {loadingHistory && (
-          <div className="text-center text-xs text-msg-system py-2">
+          <div className="text-center text-xs py-2" style={{ color: '#a78bfa' }}>
             加载中...
           </div>
         )}
-        {filteredMessages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isSelf={msg.senderId === myUserId || msg.displaySenderId === myUserId}
-            myUserId={myUserId}
-            onConfirm={() => confirmMessage(msg.id, relationshipId)}
-            onReject={() => rejectMessage(msg.id, relationshipId)}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {filteredMessages.map((msg) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isSelf={msg.senderId === myUserId || msg.displaySenderId === myUserId}
+              myUserId={myUserId}
+              onConfirm={() => confirmMessage(msg.id, relationshipId)}
+              onReject={() => rejectMessage(msg.id, relationshipId)}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Input */}
@@ -153,43 +157,67 @@ function MessageBubble({
   const isSystem = message.type === 'SYSTEM';
   const isPending = message.type === 'PENDING';
 
-  // System message
   if (isSystem) {
     return (
-      <div className="flex justify-center py-2">
-        <span className="text-xs text-msg-system bg-light-gray px-3 py-1 rounded-full">
+      <motion.div
+        className="flex justify-center py-2"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <span
+          className="text-xs px-3 py-1 rounded-full"
+          style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa' }}
+        >
           {message.content}
         </span>
-      </div>
+      </motion.div>
     );
   }
 
-  // Pending message (needs confirmation)
   if (isPending) {
     const isForMe = message.targetUserId === myUserId;
     return (
-      <div className={`flex ${isSelf ? 'justify-end' : 'justify-start'} py-1`}>
+      <motion.div
+        className={`flex ${isSelf ? 'justify-end' : 'justify-start'} py-1`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="max-w-[75%]">
           {!isSelf && message.sender && (
-            <span className="text-xs text-msg-system mb-0.5 block">
+            <span className="text-xs mb-0.5 block" style={{ color: 'rgba(245, 240, 255, 0.4)' }}>
               {message.sender.nickname}
             </span>
           )}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-3.5 py-2">
-            <p className="text-sm text-near-black whitespace-pre-wrap break-words">
+          <div
+            className="rounded-[20px] px-3.5 py-2"
+            style={{
+              background: '#1a1525',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+            }}
+          >
+            <p className="text-sm text-warm-white whitespace-pre-wrap break-words">
               {message.content}
             </p>
             {isForMe && (
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={onConfirm}
-                  className="flex-1 text-xs font-medium text-white bg-apple-blue rounded-lg py-1.5 hover:bg-apple-blue-hover transition-colors"
+                  className="flex-1 text-xs font-medium text-warm-white rounded-lg py-1.5 transition-colors"
+                  style={{ background: '#8b5cf6' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#7c3aed'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#8b5cf6'; }}
                 >
                   确认发送
                 </button>
                 <button
                   onClick={onReject}
-                  className="flex-1 text-xs font-medium text-near-black bg-white border border-gray-200 rounded-lg py-1.5 hover:bg-gray-50 transition-colors"
+                  className="flex-1 text-xs font-medium text-warm-white/70 rounded-lg py-1.5 transition-colors"
+                  style={{
+                    background: 'rgba(245, 240, 255, 0.05)',
+                    border: '1px solid rgba(245, 240, 255, 0.1)',
+                  }}
                 >
                   拒绝
                 </button>
@@ -197,35 +225,40 @@ function MessageBubble({
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   // Normal message (MAIN or PRIVATE)
   return (
-    <div className={`flex ${isSelf ? 'justify-end' : 'justify-start'} py-1`}>
+    <motion.div
+      className={`flex ${isSelf ? 'justify-end' : 'justify-start'} py-1`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <div className="max-w-[75%]">
         {!isSelf && message.sender && (
-          <span className="text-xs text-msg-system mb-0.5 block">
+          <span className="text-xs mb-0.5 block" style={{ color: 'rgba(245, 240, 255, 0.4)' }}>
             {message.sender.nickname}
           </span>
         )}
         <div
-          className={`rounded-2xl px-3.5 py-2 ${
-            isSelf
-              ? 'bg-msg-self text-white'
-              : 'bg-msg-other text-near-black'
-          }`}
+          className="rounded-[20px] px-3.5 py-2"
+          style={{
+            background: isSelf ? '#8b5cf6' : '#1f1b2e',
+            color: isSelf ? '#f5f0ff' : '#e0d4f5',
+          }}
         >
           <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
             {message.content}
           </p>
         </div>
-        <span className="text-[10px] text-msg-system mt-0.5 block">
+        <span className="text-[10px] mt-0.5 block" style={{ color: 'rgba(245, 240, 255, 0.3)' }}>
           {formatTime(message.createdAt)}
         </span>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

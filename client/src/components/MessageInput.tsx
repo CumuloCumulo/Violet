@@ -40,15 +40,21 @@ export function MessageInput({ onSend }: MessageInputProps) {
   }, []);
 
   return (
-    <div className="shrink-0 border-t border-gray-200/60 bg-white">
+    <div
+      className="shrink-0 border-t"
+      style={{ background: '#0c0a14', borderColor: 'rgba(139, 92, 246, 0.1)' }}
+    >
       {showEmoji && (
-        <div className="px-3 py-2 border-b border-gray-100">
+        <div className="px-3 py-2 border-b" style={{ borderColor: 'rgba(139, 92, 246, 0.08)' }}>
           <div className="grid grid-cols-8 gap-1">
             {EMOJIS.map((emoji) => (
               <button
                 key={emoji}
                 onClick={() => insertEmoji(emoji)}
-                className="text-xl p-1 rounded-lg hover:bg-light-gray transition-colors"
+                className="text-xl p-1 rounded-lg transition-colors"
+                style={{ color: '#f5f0ff' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139, 92, 246, 0.15)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
               >
                 {emoji}
               </button>
@@ -59,7 +65,10 @@ export function MessageInput({ onSend }: MessageInputProps) {
       <div className="flex items-center gap-2 px-3 py-2.5">
         <button
           onClick={() => setShowEmoji((v) => !v)}
-          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-light-gray transition-colors text-lg"
+          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors text-lg"
+          style={{ color: 'rgba(245, 240, 255, 0.5)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(139, 92, 246, 0.1)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
         >
           {showEmoji ? '⌨️' : '😊'}
         </button>
@@ -70,12 +79,28 @@ export function MessageInput({ onSend }: MessageInputProps) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="输入消息..."
-          className="flex-1 min-w-0 h-9 px-3 rounded-full bg-light-gray text-sm text-near-black placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-apple-blue/30 transition-shadow"
+          className="flex-1 min-w-0 h-9 px-3 rounded-full text-sm outline-none transition-shadow"
+          style={{
+            background: '#1a1525',
+            color: '#f5f0ff',
+            border: '1px solid rgba(139, 92, 246, 0.15)',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.4)';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.15)';
+          }}
         />
         <button
           onClick={handleSend}
           disabled={!text.trim()}
-          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-apple-blue text-white disabled:opacity-30 hover:bg-apple-blue-hover transition-colors"
+          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors disabled:opacity-30"
+          style={{ background: '#8b5cf6', color: '#f5f0ff' }}
+          onMouseEnter={(e) => { if (text.trim()) (e.currentTarget as HTMLButtonElement).style.background = '#7c3aed'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#8b5cf6'; }}
         >
           <svg
             width="16"

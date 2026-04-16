@@ -311,3 +311,84 @@ The color story is starkly binary. Product sections alternate between pure black
 6. Products always appear on solid color fields — never on gradients, textures, or lifestyle backgrounds in hero modules
 7. Shadow is rare and always soft: `3px 5px 30px 0.22 opacity` or nothing at all
 8. Pill CTAs use 980px radius — this creates the signature Apple rounded-rectangle-that-looks-like-a-capsule shape
+
+## 10. Violet Brand Extension
+
+*The sections above define universal design principles derived from Apple. This section defines the Violet brand-specific visual layer applied on top of those principles.*
+
+### Philosophy: "对话即心跳"
+
+Apple's design language treats the product as sculpture — cold, precise, industrial. Violet reinterprets this for a campus romance platform: the same precision and restraint, but with warmth, intimacy, and youth. Where Apple is a gallery, Violet is a candlelit conversation. The dark canvas remains, but its temperature shifts from cold black to warm purple-black. The singular accent color shifts from corporate blue to violet — young without being childish, distinctive without being loud.
+
+### Color Palette Override
+
+**Base Tones** (replacing Apple's black/gray):
+- **Deep Base** (`#0c0a14`): Page backgrounds — an extremely dark purple-black that reads as near-black but carries warmth
+- **Card Surface** (`#1a1525`): Input fields, card backgrounds — dark purple-gray, warm and identifiable
+- **Input Surface** (`#231e2e`): Elevated surface layer — subtle but distinct from base
+
+**Accent** (replacing Apple Blue `#0071e3`):
+- **Violet Accent** (`#8b5cf6`): Primary interactive color — CTAs, focus rings, selected states
+- **Violet Hover** (`#7c3aed`): Slightly deeper violet for hover states
+- **Violet Light** (`#a78bfa`): Lighter violet for secondary elements on dark backgrounds, badges, subtle highlights
+- **Coral Pink** (`#f472b6`): Warm accent for notifications, special highlights (use sparingly)
+
+**Text** (replacing Apple's white/gray text):
+- **Warm White** (`#f5f0ff`): Primary text on dark backgrounds — not pure white, carries a subtle lavender warmth
+- **Warm White 50%** (`rgba(245, 240, 255, 0.5)`): Secondary text, labels
+- **Warm White 30%** (`rgba(245, 240, 255, 0.3)`): Tertiary text, placeholders, disabled states
+
+**Functional Colors**:
+- **Online** (`#34d399`): Emerald green — online status indicator
+- **System** (`#a78bfa`): Violet light — system messages
+- **Pending** (`#fbbf24`): Amber — pending/confirmation states
+
+**Chat Bubbles**:
+- **Self Bubble** (`#8b5cf6`): Violet accent background + warm white text
+- **Other Bubble** (`#1f1b2e`): Deep purple background + light lavender text (`#e0d4f5`)
+- **System Pill** (`rgba(139, 92, 246, 0.15)`): Semi-transparent violet pill + `#a78bfa` text
+
+### Typography Overrides
+
+- **Brand Name "Violet"**: SF Pro Display, weight 300, letter-spacing -0.02em — deliberately lighter than Apple's weight 600 for headlines
+- **Page Titles**: SF Pro Text, weight 500 (reduced from Apple's 600) — less heavy, more conversational
+- **Body**: Remains weight 400 per Apple baseline
+
+### Component Style Overrides
+
+**Navigation Glass**:
+- Background: `rgba(12, 10, 20, 0.8)` (purple-tinted translucent) + `backdrop-filter: blur(20px) saturate(180%)`
+- The purple tint in the translucency creates a warm glow when scrolling over violet-accented content
+
+**Input Fields**:
+- Background: `#1a1525`
+- Border: `rgba(139, 92, 246, 0.15)`
+- Focus ring: `rgba(139, 92, 246, 0.4)` (violet glow)
+- Text: `#f5f0ff`, Placeholder: `rgba(245, 240, 255, 0.3)`
+
+**Buttons (Primary)**:
+- Background: `#8b5cf6` (violet accent)
+- Hover: `#7c3aed`
+- Text: `#f5f0ff`
+- Disabled: opacity 0.3
+
+**Panel Dividers**:
+- Color: `rgba(139, 92, 246, 0.15)` — violet-tinted semi-transparent
+
+**Login Page Background**:
+- Radial gradient: `#0c0a14` → `#1a1028` → `#0c0a14`
+- Creates a subtle spotlight effect at center
+
+### Do's and Don'ts (Violet-specific)
+
+Do:
+- Use `#0c0a14` as the default dark background — never revert to pure `#000000`
+- Use `#8b5cf6` as the sole chromatic accent — the same monochromatic discipline as Apple Blue, but warmer
+- Apply warm white (`#f5f0ff`) for text — pure white feels clinical in this context
+- Use the purple-tinted glass effect for all overlay elements
+
+Don't:
+- Don't mix Apple Blue (`#0071e3`) with Violet accent (`#8b5cf6`) — pick one system per page
+- Don't use pure white (`#ffffff`) for text on dark backgrounds — it's too cold for Violet's tone
+- Don't use Coral Pink (`#f472b6`) for primary interactions — it's reserved for special highlights only
+- Don't add gradients to buttons — flat violet with hover darkening, following Apple's button restraint

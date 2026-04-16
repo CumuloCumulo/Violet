@@ -40,21 +40,30 @@ export function PresenceIndicator({ relationshipId }: PresenceIndicatorProps) {
         {members.slice(0, 4).map((member) => (
           <div
             key={member.userId}
-            className="relative w-6 h-6 rounded-full bg-gray-300 ring-2 ring-white"
+            className="relative w-6 h-6 rounded-full"
+            style={{
+              background: '#1a1525',
+              boxShadow: '0 0 0 2px #0c0a14',
+            }}
             title={`${member.nickname ?? member.userId} - ${member.online ? '在线' : '离线'}`}
           >
-            <span className="text-[9px] font-medium text-white flex items-center justify-center h-full">
+            <span
+              className="text-[9px] font-medium flex items-center justify-center h-full"
+              style={{ color: '#a78bfa' }}
+            >
               {(member.nickname ?? '?')[0]}
             </span>
             <span
-              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-1.5 ring-white ${
-                member.online ? 'bg-online' : 'bg-offline'
-              }`}
+              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full"
+              style={{
+                background: member.online ? '#34d399' : '#6b7280',
+                boxShadow: '0 0 0 1.5px #0c0a14',
+              }}
             />
           </div>
         ))}
       </div>
-      <span className="text-[11px] text-msg-system tabular-nums">
+      <span className="text-[11px] tabular-nums" style={{ color: 'rgba(245, 240, 255, 0.4)' }}>
         {onlineCount}人在线
       </span>
     </div>

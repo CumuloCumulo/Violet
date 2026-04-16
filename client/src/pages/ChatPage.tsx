@@ -64,18 +64,18 @@ export function ChatPage({
   ];
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Top Navigation Bar */}
-      <header className="shrink-0 h-12 bg-near-black/80 backdrop-blur-xl flex items-center px-4 z-10">
+    <div className="h-full flex flex-col bg-deep-base">
+      {/* Top Navigation Bar - Violet Glass */}
+      <header className="glass-violet shrink-0 h-12 flex items-center px-4 z-10">
         <button
           onClick={onExit}
-          className="text-white/70 hover:text-white transition-colors mr-3"
+          className="text-warm-white/50 hover:text-warm-white transition-colors mr-3"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        <h1 className="text-white text-[15px] font-semibold tracking-tight flex-1">
+        <h1 className="text-warm-white text-[15px] font-medium flex-1" style={{ letterSpacing: '-0.01em' }}>
           破冰聊天
         </h1>
         <ConnectionStatus connected={connected} />
@@ -83,17 +83,21 @@ export function ChatPage({
 
       {/* Mode Switcher (for clients with wingman) */}
       {!isWingman && wingmanId && (
-        <div className="shrink-0 flex items-center gap-1 px-4 py-2 bg-light-gray border-b border-gray-200/60">
-          <span className="text-xs text-msg-system mr-2">军师模式:</span>
+        <div
+          className="shrink-0 flex items-center gap-1 px-4 py-2 border-b"
+          style={{ background: '#0f0d17', borderColor: 'rgba(139, 92, 246, 0.1)' }}
+        >
+          <span className="text-xs text-warm-white-50 mr-2">军师模式:</span>
           {modeOptions.map((opt) => (
             <button
               key={opt.value}
               onClick={() => handleModeSwitch(opt.value)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+              style={
                 wingmanMode === opt.value
-                  ? 'bg-apple-blue text-white'
-                  : 'bg-white text-near-black border border-gray-200 hover:bg-gray-50'
-              }`}
+                  ? { background: '#8b5cf6', color: '#f5f0ff' }
+                  : { background: 'rgba(139, 92, 246, 0.1)', color: 'rgba(245, 240, 255, 0.5)' }
+              }
             >
               {opt.label}
             </button>
@@ -105,7 +109,12 @@ export function ChatPage({
       <div className="flex-1 flex min-h-0">
         {/* Main Chat Panel */}
         {showMainPanel && (
-          <div className={`flex flex-col ${showPrivatePanel ? 'w-3/5 border-r border-gray-200/60' : 'w-full'}`}>
+          <div
+            className={`flex flex-col ${
+              showPrivatePanel ? 'w-3/5 border-r' : 'w-full'
+            }`}
+            style={{ borderColor: 'rgba(139, 92, 246, 0.15)' }}
+          >
             <ChatPanel
               relationshipId={relationshipId}
               title="主聊天"
@@ -138,11 +147,10 @@ function ConnectionStatus({ connected }: { connected: boolean }) {
   return (
     <div className="flex items-center gap-1.5">
       <span
-        className={`w-2 h-2 rounded-full ${
-          connected ? 'bg-online' : 'bg-red-400'
-        }`}
+        className="w-2 h-2 rounded-full"
+        style={{ background: connected ? '#34d399' : '#f87171' }}
       />
-      <span className="text-white/50 text-[11px]">
+      <span className="text-warm-white-50 text-[11px]">
         {connected ? '已连接' : '连接中...'}
       </span>
     </div>
