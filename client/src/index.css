@@ -1,47 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  /* Violet Brand Colors */
-  --color-violet-accent: #8b5cf6;
-  --color-violet-hover: #7c3aed;
-  --color-violet-light: #a78bfa;
-  --color-coral-pink: #f472b6;
-
-  /* Base tones */
-  --color-deep-base: #0c0a14;
-  --color-card-surface: #1a1525;
-  --color-input-surface: #231e2e;
+  /* Violet Ethereal Palette - from 二月兰 photographs */
+  --color-violet-light: #d6e0ff;
+  --color-violet-main: #8ca0ff;
+  --color-violet-deep: #6b82f0;
+  --color-spring-green: #d4eda4;
+  --color-cream: #fbfbfc;
 
   /* Text */
-  --color-warm-white: #f5f0ff;
-  --color-warm-white-50: rgba(245, 240, 255, 0.5);
-  --color-warm-white-30: rgba(245, 240, 255, 0.3);
+  --color-ink: #3a405a;
+  --color-ink-light: #5a627a;
+  --color-ink-muted: #7a829a;
 
-  /* Functional */
-  --color-online: #34d399;
-  --color-system-msg: #a78bfa;
-  --color-pending: #fbbf24;
+  /* Glass */
+  --color-glass-bg: rgba(255, 255, 255, 0.18);
+  --color-glass-border: rgba(255, 255, 255, 0.35);
+  --color-glass-bg-heavy: rgba(255, 255, 255, 0.55);
 
   /* Chat bubbles */
-  --color-bubble-self: #8b5cf6;
-  --color-bubble-other: #1f1b2e;
-  --color-bubble-other-text: #e0d4f5;
+  --color-bubble-self: #8ca0ff;
+  --color-bubble-self-hover: #7b90f0;
+  --color-bubble-other: rgba(255, 255, 255, 0.55);
+  --color-bubble-other-text: #3a405a;
+  --color-bubble-system-bg: rgba(140, 160, 255, 0.12);
+  --color-bubble-system-text: #6b82f0;
 
   /* Panels */
-  --color-panel-header: #0f0d17;
-  --color-divider-violet: rgba(139, 92, 246, 0.15);
-  --color-divider-violet-subtle: rgba(139, 92, 246, 0.1);
+  --color-panel-header: rgba(255, 255, 255, 0.45);
+  --color-divider: rgba(140, 160, 255, 0.12);
+  --color-divider-subtle: rgba(140, 160, 255, 0.08);
 
-  /* Font family - SF Pro with system fallbacks */
-  --font-sans: -apple-system, "SF Pro Text", "SF Pro Icons", "Helvetica Neue",
-    "Helvetica", "Arial", sans-serif;
-  --font-display: -apple-system, "SF Pro Display", "SF Pro Icons",
-    "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  /* Functional */
+  --color-online: #6b8c5a;
+  --color-pending: #c4a35a;
+  --color-rose: #c47d8e;
 
-  /* Spacing scale (Apple's dense scale) */
-  --spacing-4\.5: 1.125rem;
-  --spacing-13: 3.25rem;
-  --spacing-15: 3.75rem;
+  /* Font families */
+  --font-serif: 'Cormorant Garamond', 'Georgia', serif;
+  --font-sans: 'Outfit', -apple-system, 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
 }
 
 /* Base styles */
@@ -56,13 +53,89 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--color-warm-white);
-  background: var(--color-deep-base);
+  color: var(--color-ink);
+  background: var(--color-cream);
 }
 
-/* Scrollbar styling */
+/* -------------------------------------
+   Noise Texture Overlay
+------------------------------------- */
+.noise-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.06;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* -------------------------------------
+   Ambient Background Blobs
+------------------------------------- */
+.ambient-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--color-cream);
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: blob-float 20s infinite alternate ease-in-out;
+}
+
+.blob-1 {
+  top: -15%; left: -10%; width: 55vw; height: 55vw;
+  background: var(--color-violet-light);
+  animation-delay: 0s;
+}
+
+.blob-2 {
+  bottom: -20%; right: -10%; width: 60vw; height: 60vw;
+  background: var(--color-violet-main);
+  animation-delay: -5s;
+  opacity: 0.35;
+}
+
+.blob-3 {
+  top: 25%; left: 45%; width: 35vw; height: 35vw;
+  background: var(--color-spring-green);
+  animation-delay: -10s;
+  opacity: 0.3;
+}
+
+@keyframes blob-float {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5%, 8%) scale(1.08); }
+  100% { transform: translate(-3%, 4%) scale(0.95); }
+}
+
+/* -------------------------------------
+   Glassmorphism Utilities
+------------------------------------- */
+.glass {
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(24px) saturate(130%);
+  -webkit-backdrop-filter: blur(24px) saturate(130%);
+  border: 1px solid var(--color-glass-border);
+}
+
+.glass-heavy {
+  background: var(--color-glass-bg-heavy);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* -------------------------------------
+   Scrollbar
+------------------------------------- */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
@@ -70,22 +143,10 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(140, 160, 255, 0.2);
   border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.35);
-}
-
-/* Violet glass effect */
-.glass-violet {
-  background: rgba(12, 10, 20, 0.8);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-}
-
-/* Login gradient background */
-.login-gradient {
-  background: radial-gradient(ellipse at center, #1a1028 0%, #0c0a14 70%);
+  background: rgba(140, 160, 255, 0.35);
 }
