@@ -51,6 +51,22 @@ enum MessageType {
   SYSTEM      // 系统消息
 }
 
+// 牵线请求状态枚举
+enum MatchRequestStatus {
+  PENDING     // 待处理
+  ACCEPTED    // 已接受
+  REJECTED    // 已拒绝
+  EXPIRED     // 已过期
+}
+
+// 军师认证状态枚举
+enum WingmanCertStatus {
+  NONE        // 未申请
+  PENDING     // 审核中
+  APPROVED    // 已通过
+  REJECTED    // 已驳回
+}
+
 // ==================== 用户 ====================
 model User {
   id           String   @id @default(cuid())
@@ -63,10 +79,15 @@ model User {
   grade        String?                   // 年级
   major        String?                   // 专业
   interests    String[]                  // 兴趣标签
+  declaration  String?                   // 恋爱宣言
   creditScore  Int      @default(0)     // 信用分
   isActive     Boolean  @default(true)  // 是否活跃
   lastActiveAt DateTime @default(now()) // 最后活跃时间
   roles        UserRole[]               // 用户角色（可双重）
+  wingmanCertStatus  WingmanCertStatus @default(NONE) // 军师认证状态
+  wingmanCertCooldown DateTime?         // 军师认证失败冷却截止时间
+  wechat        String?                 // 微信（隐藏）
+  qq           String?                  // QQ（隐藏）
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -88,6 +109,12 @@ model User {
   postReplies    PostReply[]
   // 作为目标的私聊消息
   targetedMessages Message[] @relation("TargetedMessages")
+  // 发出的牵线请求
+  sentMatchRequests     MatchRequest[] @relation("SentRequests")
+  // 收到的牵线请求
+  receivedMatchRequests MatchRequest[] @relation("ReceivedRequests")
+  // 签到记录
+  checkinRecords CheckinRecord[]
 }
 
 // ==================== 关系（牵线/破冰/暧昧） ====================
@@ -159,6 +186,22 @@ model Message {
   @@index([relationshipId, createdAt])
 }
 
+// ==================== 牵线请求 ====================
+model MatchRequest {
+  id         String             @id @default(cuid())
+  fromUserId String                              // 发起方
+  toUserId   String                              // 目标方
+  status     MatchRequestStatus @default(PENDING)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  fromUser   User               @relation("SentRequests", fields: [fromUserId], references: [id])
+  toUser     User               @relation("ReceivedRequests", fields: [toUserId], references: [id])
+
+  @@index([toUserId, status])
+  @@index([fromUserId, status])
+}
+
 // ==================== 评价 ====================
 model Rating {
   id             String   @id @default(cuid())
@@ -199,4 +242,15 @@ model PostReply {
   author    User     @relation(fields: [authorId], references: [id])
 
   @@index([postId, createdAt])
+}
+
+// ==================== 签到记录 ====================
+model CheckinRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }

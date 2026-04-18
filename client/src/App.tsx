@@ -1,11 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ChatPage } from './pages/ChatPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ProfileSetupPage } from './pages/ProfileSetupPage';
+import { DiscoveryPage } from './pages/DiscoveryPage';
+import { useAuthStore } from './stores/authStore';
 import { useDevData, type DevUser, type DevRelationship } from './hooks/useDevData';
 
 const DEV_MODE = import.meta.env.DEV;
-
-type Identity = 'CLIENT' | 'WINGMAN';
 
 function App() {
   if (DEV_MODE) {
@@ -13,7 +16,7 @@ function App() {
       <>
         <AmbientBackground />
         <NoiseOverlay />
-        <DevLoginPage />
+        <DevApp />
       </>
     );
   }
@@ -22,28 +25,40 @@ function App() {
     <>
       <AmbientBackground />
       <NoiseOverlay />
-      <ProdLoginPage />
+      <ProdApp />
     </>
   );
 }
 
-// ─── DEV Mode: Selection-based Login ───────────────────────────
+// ─── DEV Mode: Selection-based Login (preserved) ──────────────
 
-function DevLoginPage() {
+function DevApp() {
   const { users, relationships, loading } = useDevData();
-  const [identity, setIdentity] = useState<Identity | null>(null);
+  const [identity, setIdentity] = useState<'CLIENT' | 'WINGMAN' | null>(null);
   const [selectedUser, setSelectedUser] = useState<DevUser | null>(null);
   const [selectedRel, setSelectedRel] = useState<DevRelationship | null>(null);
   const [started, setStarted] = useState(false);
+  const [useRealAuth, setUseRealAuth] = useState(false);
 
-  // Filter users by selected identity
+  // Use authStore page state for new pages
+  const page = useAuthStore((s) => s.page);
+  const authUser = useAuthStore((s) => s.user);
+  const chatRelationshipId = useAuthStore((s) => s.chatRelationshipId);
+  const fetchMe = useAuthStore((s) => s.fetchMe);
+  const exitChat = useAuthStore((s) => s.exitChat);
+  const setPage = useAuthStore((s) => s.setPage);
+
+  // Try to resume session
+  useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
+
   const filteredUsers = useMemo(() => {
     if (!identity) return [];
     if (identity === 'CLIENT') return users.filter((u) => u.roles.includes('CLIENT'));
     return users.filter((u) => u.roles.includes('WINGMAN'));
   }, [users, identity]);
 
-  // Filter relationships by selected user
   const filteredRels = useMemo(() => {
     if (!selectedUser) return [];
     if (identity === 'CLIENT') {
@@ -56,17 +71,13 @@ function DevLoginPage() {
     );
   }, [relationships, selectedUser, identity]);
 
-  // Compute ChatPage props
   const chatUserId = selectedUser?.id ?? '';
-  const chatRelationshipId = selectedRel?.id ?? '';
+  const chatRelationshipIdDev = selectedRel?.id ?? '';
 
-  // 当事人：wingmanId = 己方军师 ID，privateChatTargetId = 同上
-  // 军师：wingmanId = undefined（不控制模式），privateChatTargetId = 己方当事人 ID
   const { chatWingmanId, chatPrivateTargetId } = useMemo(() => {
     if (!selectedRel || !selectedUser) return { chatWingmanId: undefined, chatPrivateTargetId: undefined };
 
     if (identity === 'CLIENT') {
-      // 判断当事人是 user1 还是 user2，取对应 side 的军师
       const side = selectedRel.user1.id === selectedUser.id ? 1 : 2;
       const assignment = selectedRel.assignments.find((a) => a.side === side);
       return {
@@ -75,7 +86,6 @@ function DevLoginPage() {
       };
     }
 
-    // WINGMAN：私聊对象是己方当事人
     const assignment = selectedRel.assignments.find((a) => a.userId === selectedUser.id);
     const clientUser = assignment?.side === 1 ? selectedRel.user1 : selectedRel.user2;
     return {
@@ -84,14 +94,40 @@ function DevLoginPage() {
     };
   }, [identity, selectedRel, selectedUser]);
 
-  if (started && chatUserId && chatRelationshipId) {
+  // ── All hooks above this line. Early returns below. ──
+
+  // If in chat mode (from discovery acceptance)
+  if (page === 'chat' && authUser && chatRelationshipId) {
+    return (
+      <ChatPage
+        userId={authUser.id}
+        relationshipId={chatRelationshipId}
+        onExit={exitChat}
+      />
+    );
+  }
+
+  // If authenticated, show production-style pages
+  if (authUser && page !== 'login' && page !== 'register') {
+    if (page === 'profile-setup') return <ProfileSetupPage />;
+    if (page === 'discovery') return <DiscoveryPage />;
+  }
+
+  // If user chose real auth flow
+  if (useRealAuth) {
+    if (page === 'register') return <><AmbientBackground /><NoiseOverlay /><RegisterPage /></>;
+    if (page === 'discovery' && authUser) return <><AmbientBackground /><NoiseOverlay /><DiscoveryPage /></>;
+    return <><AmbientBackground /><NoiseOverlay /><LoginPage /></>;
+  }
+
+  if (started && chatUserId && chatRelationshipIdDev) {
     return (
       <>
         <AmbientBackground />
         <NoiseOverlay />
         <ChatPage
           userId={chatUserId}
-          relationshipId={chatRelationshipId}
+          relationshipId={chatRelationshipIdDev}
           wingmanId={chatWingmanId}
           privateChatTargetId={chatPrivateTargetId}
           onExit={() => {
@@ -140,6 +176,15 @@ function DevLoginPage() {
           >
             DEV MODE
           </motion.span>
+          <div className="mt-4">
+            <button
+              onClick={() => { setUseRealAuth(true); setPage('login'); }}
+              className="text-xs transition-colors"
+              style={{ color: '#8ca0ff' }}
+            >
+              使用注册/登录 →
+            </button>
+          </div>
         </motion.div>
 
         {loading ? (
@@ -170,12 +215,11 @@ function DevLoginPage() {
               </div>
             </StepSection>
 
-            {/* Step 2: User */}
             {identity && (
               <StepSection label="2. 选择用户">
                 <div className="space-y-2">
                   {filteredUsers.map((u) => (
-                    <UserCard
+                    <DevUserCard
                       key={u.id}
                       user={u}
                       selected={selectedUser?.id === u.id}
@@ -190,7 +234,6 @@ function DevLoginPage() {
               </StepSection>
             )}
 
-            {/* Step 3: Relationship */}
             {selectedUser && (
               <StepSection label="3. 选择聊天室">
                 <div className="space-y-2">
@@ -209,7 +252,6 @@ function DevLoginPage() {
               </StepSection>
             )}
 
-            {/* Enter button */}
             {selectedRel && (
               <motion.button
                 onClick={() => setStarted(true)}
@@ -243,6 +285,45 @@ function DevLoginPage() {
   );
 }
 
+// ─── Prod Mode: Auth-based routing ───────────────────────────
+
+function ProdApp() {
+  const page = useAuthStore((s) => s.page);
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  const chatRelationshipId = useAuthStore((s) => s.chatRelationshipId);
+  const fetchMe = useAuthStore((s) => s.fetchMe);
+  const exitChat = useAuthStore((s) => s.exitChat);
+
+  useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm" style={{ color: '#9e98aa' }}>加载中...</p>
+      </div>
+    );
+  }
+
+  if (page === 'chat' && user && chatRelationshipId) {
+    return (
+      <ChatPage
+        userId={user.id}
+        relationshipId={chatRelationshipId}
+        onExit={exitChat}
+      />
+    );
+  }
+
+  if (page === 'register') return <RegisterPage />;
+  if (page === 'profile-setup') return <ProfileSetupPage />;
+  if (page === 'discovery' && user) return <DiscoveryPage />;
+
+  return <LoginPage />;
+}
+
 // ─── Shared UI Components ──────────────────────────────────────
 
 function StepSection({ label, children }: { label: string; children: React.ReactNode }) {
@@ -273,7 +354,7 @@ function SelectCard({ selected, onClick, label, desc }: {
   );
 }
 
-function UserCard({ user, selected, onClick, isWingman }: {
+function DevUserCard({ user, selected, onClick, isWingman }: {
   user: DevUser; selected: boolean; onClick: () => void; isWingman: boolean;
 }) {
   const icon = isWingman ? '\uD83C\uDFAF' : '\uD83D\uDC64';
@@ -342,94 +423,6 @@ function RelationshipCard({ rel, selected, onClick }: {
         </div>
       )}
     </button>
-  );
-}
-
-// ─── Prod Mode: Placeholder for future login ───────────────────
-
-function ProdLoginPage() {
-  const [userId, setUserId] = useState('');
-  const [relationshipId, setRelationshipId] = useState('');
-  const [started, setStarted] = useState(false);
-
-  if (started && userId && relationshipId) {
-    return (
-      <>
-        <AmbientBackground />
-        <NoiseOverlay />
-        <ChatPage
-          userId={userId}
-          relationshipId={relationshipId}
-          onExit={() => setStarted(false)}
-        />
-      </>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-10">
-          <h1
-            className="text-ink text-[56px] font-light tracking-wide"
-            style={{ fontFamily: 'var(--font-serif)', letterSpacing: '0.02em' }}
-          >
-            Violet
-          </h1>
-          <p className="mt-2 text-sm font-light" style={{ color: '#5a627a' }}>
-            对话即心跳 — 校园恋爱代聊平台
-          </p>
-        </div>
-        <div className="glass rounded-[28px] p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-light mb-1.5" style={{ color: '#7a829a' }}>
-              用户 ID
-            </label>
-            <input
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="输入你的用户 ID"
-              className="w-full h-11 px-4 rounded-2xl text-sm outline-none transition-all"
-              style={{
-                background: 'rgba(255, 255, 255, 0.5)',
-                color: '#3a405a',
-                border: '1px solid rgba(140, 160, 255, 0.15)',
-              }}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-light mb-1.5" style={{ color: '#7a829a' }}>
-              关系 ID
-            </label>
-            <input
-              type="text"
-              value={relationshipId}
-              onChange={(e) => setRelationshipId(e.target.value)}
-              placeholder="输入关系 ID"
-              className="w-full h-11 px-4 rounded-2xl text-sm outline-none transition-all"
-              style={{
-                background: 'rgba(255, 255, 255, 0.5)',
-                color: '#3a405a',
-                border: '1px solid rgba(140, 160, 255, 0.15)',
-              }}
-            />
-          </div>
-          <button
-            onClick={() => setStarted(true)}
-            disabled={!userId.trim() || !relationshipId.trim()}
-            className="w-full h-11 rounded-2xl text-sm font-medium transition-all disabled:opacity-30"
-            style={{
-              background: '#8ca0ff',
-              color: '#ffffff',
-              boxShadow: '0 8px 24px rgba(140, 160, 255, 0.35)',
-            }}
-          >
-            进入聊天
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 

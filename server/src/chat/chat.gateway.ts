@@ -8,10 +8,13 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import * as jwt from 'jsonwebtoken';
 import { ChatService } from './chat.service.js';
 import { RoomService } from './room.service.js';
 import { PresenceService } from './presence.service.js';
 import { ChatLifecycleService } from './chat-lifecycle.service.js';
+
+const JWT_SECRET = process.env['JWT_SECRET'] ?? 'violet-dev-secret';
 
 export interface AuthenticatedSocket extends Socket {
   data: {
@@ -42,8 +45,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   handleConnection(client: AuthenticatedSocket) {
-    const userId =
-      client.handshake.auth?.userId ?? client.handshake.query?.userId;
+    // Try JWT cookie first, fallback to auth/query for DEV mode
+    let userId: string | undefined;
+
+    // 1. Try JWT from cookie
+    const cookie = client.handshake.headers?.cookie;
+    if (cookie) {
+      const match = cookie.match(/(?:^|;\s*)token=([^;]*)/);
+      if (match) {
+        try {
+          const payload = jwt.verify(match[1], JWT_SECRET) as { sub: string };
+          userId = payload.sub;
+        } catch {
+          // Invalid token, try fallback
+        }
+      }
+    }
+
+    // 2. Fallback: auth/query param (DEV mode)
+    if (!userId) {
+      userId =
+        client.handshake.auth?.userId ?? client.handshake.query?.userId;
+    }
+
     if (!userId || typeof userId !== 'string') {
       client.disconnect(true);
       return;
