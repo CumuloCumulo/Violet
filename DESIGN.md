@@ -1,122 +1,111 @@
 # Violet — 空灵浪漫设计系统 (Ethereal Romance)
 
-灵感源自梦幻后期处理的二月兰摄影作品——长春花蓝的弥散光斑、斑驳的阳光、极浅的景深。这不是一个"功能型"的 UI，而是一场坠入爱河的数字体验。
+灵感源自梦幻后期处理的二月兰摄影作品——长春花蓝的弥散光斑、斑驳的阳光、极浅的景深。这不是一个“功能型”的办公软件 UI，而是一场**“悬浮在花海上的”坠入爱河的数字体验**。
 
-## 1. 设计哲学
+## 1. 设计哲学 (Design Philosophy)
 
-- **弥散光斑即背景**: 不用纯色填充。背景是缓慢游走的渐变色块，模拟风吹过紫色花海
-- **毛玻璃即景深**: 所有卡片和面板都像漂浮在花海上的毛玻璃，呼应大光圈的虚化效果
-- **颗粒感即质感**: 全局 SVG noise 覆盖层注入胶片/画布的微粗糙感，脱离数字产品的"塑料感"
+- **弥散光斑即背景 (Dappled Light)**: 坚决摒弃死板的纯色背景。背景是缓慢游走的、带有呼吸感的渐变色块，模拟风吹过紫金草花海时，阳光透过树叶落下的斑驳光影。
+- **颗粒感即质感 (Film Grain)**: 全局 SVG noise 覆盖层注入胶片和粗糙画布的质感，彻底脱离现代数字产品的“廉价塑料感与AI感”。
+- **Z轴景深与悬浮架构 (Floating Depth)**: 抛弃传统 Web 应用“撑满全屏、平铺直叙”的框架。核心交互区像一块巨大的玻璃悬浮在光斑背景之上，四周留白，建立起“前景清晰、背景虚化”的强烈景深感（大光圈效应）。
+- **拒绝生硬线条 (Organic Boundaries)**: 恋爱是柔软的。用光晕、半透明渐变（Gradient Borders）和内发光（Inner Shadows）来代替传统的 `1px solid` 分割线。界面元素应当像清晨花瓣上的露珠般晶莹剔透。
 
-## 2. 色彩体系
+## 2. 色彩体系 (Color System)
 
-### 核心色板（从二月兰摄影中提取）
+不仅是颜色的堆砌，更是情绪的划分。
+
+### 核心情绪色板（提取自初春摄影）
+
+| 名称 | 色值 | 情绪/用途 |
+|------|------|------|
+| **Violet Light** | `#d6e0ff` | **晨曦**：弥散光斑、浅色背景、柔和过渡 |
+| **Violet Main** | `#8ca0ff` | **心动**：主交互色、自己的消息气泡、主按钮 |
+| **Violet Deep** | `#6b82f0` | **笃定**：Hover 态、品牌核心文字、强调图标 |
+| **Spring Green** | `#d4eda4` | **生机/指引**：军师/AI助手模式专属辅助色、匹配徽章 |
+| **Cream** | `#fdfdfd` | **画纸**：网页绝对底色（被噪点和光斑覆盖之上） |
+
+### 文字与轮廓色
 
 | 名称 | 色值 | 用途 |
 |------|------|------|
-| Violet Light | `#d6e0ff` | 弥散光斑、浅色背景区域 |
-| Violet Main | `#8ca0ff` | 主交互色：CTA、自己消息气泡、选中态 |
-| Violet Deep | `#6b82f0` | Hover 态、强调 |
-| Spring Green | `#d4eda4` | 辅助色：徽章、点缀（少量使用） |
-| Cream | `#fbfbfc` | 页面底色 |
+| **Ink** | `#3a405a` | 主文字，带有微弱蓝色倾向的深灰，比纯黑更透气 |
+| **Ink Muted** | `#7a829a` | 次级文字、输入框占位符、次要图标 |
+| **Glass Light**| `rgba(255,255,255,0.7)` | 露珠质感的边框、高光高亮处 |
 
-### 文字色
+### 玻璃景深系统 (Glassmorphic Depth)
 
-| 名称 | 色值 | 用途 |
+| 层级名称 | CSS 变量 / 值 | 用途 |
 |------|------|------|
-| Ink | `#3a405a` | 主文字 |
-| Ink Light | `#5a627a` | 次级文字 |
-| Ink Muted | `#7a829a` | 三级文字、标签 |
+| **底层光晕** | `blur(90px)` | 纯背景光斑，极度失焦 |
+| **主控台玻璃** | `rgba(255,255,255,0.45)` + `blur(24px)` | 悬浮应用的主体容器 |
+| **露珠内阴影** | `inset 0 0 0 1px rgba(255,255,255,0.5)` | 赋予卡片、输入框立体的“玻璃边缘反光” |
+| **柔光外阴影** | `0 30px 60px rgba(140,160,255,0.15)` | 让主控台脱离背景，产生漂浮感 |
 
-### 毛玻璃系统
+## 3. 排版系统 (Typography)
 
-| 名称 | 值 | 用途 |
-|------|------|------|
-| Glass BG | `rgba(255, 255, 255, 0.18)` | 卡片、面板背景 |
-| Glass Border | `rgba(255, 255, 255, 0.35)` | 毛玻璃边框 |
-| Glass Heavy BG | `rgba(255, 255, 255, 0.55)` | 消息气泡（对方）、更实的表面 |
-| Blur Heavy | `blur(24px)` | 导航栏、卡片 |
-| Blur Light | `blur(12px)` | 消息气泡、输入区域 |
-
-### 消息气泡色
-
-| 类型 | 背景 | 文字 |
-|------|------|------|
-| 自己的消息 | `#8ca0ff` + `box-shadow: 0 4px 16px rgba(140, 160, 255, 0.25)` | `#ffffff` |
-| 对方的消息 | `rgba(255, 255, 255, 0.55)` + `backdrop-filter: blur(12px)` | `#3a405a` |
-| 系统消息 | `rgba(140, 160, 255, 0.12)` | `#6b82f0` |
-| 待确认消息 | `rgba(255, 255, 255, 0.55)` + 金色边框 | `#3a405a` |
-
-## 3. Typography
-
-### 字体
+诗意与可读性的平衡。
 
 ```css
---font-serif: 'Cormorant Garamond', Georgia, serif;   /* 标题、品牌名 */
---font-sans: 'Outfit', -apple-system, sans-serif;       /* 正文、UI */
+--font-serif: 'Cormorant Garamond', Georgia, serif;   /* 情绪表达、诗意、优雅 */
+--font-sans: 'Outfit', -apple-system, sans-serif;       /* 现代感、清晰、青春 */
 ```
 
-### 排版层级
+| 角色 | 字体 | 参数 | 备注 |
+|------|------|------|------|
+| **品牌名 & 大标题** | **Serif** | 300~400，斜体点缀 | 宛如手写情书，用于 "Violet" 和主 Landing Page 标语 |
+| **界面模块标题** | **Serif** | 16px - 20px, 500 | 如“主聊天”、“军师私聊”的顶部标题，带入古典美 |
+| **正文 (聊天内容)** | **Sans** | 14px, 400, 行高 1.6 | 保证长时间聊天的可读性，清晰无负担 |
+| **时间/微型提示** | **Sans** | 11px - 12px, 300 | 极致轻量化，色彩使用 Ink Muted |
 
-| 角色 | 字体 | 字号 | 字重 | 备注 |
-|------|------|------|------|------|
-| 品牌名 "Violet" | Serif | 56px | 300 | letter-spacing: 0.02em |
-| 页面标题 | Serif | 15px | 500 | 聊天页导航标题 |
-| 正文 | Sans | 14px | 400 | 消息文字 |
-| 标签 | Sans | 12px | 400 | 输入框标签 |
-| 时间戳 | Sans | 10px | 400 | 消息时间 |
+## 4. 核心视觉特效 (Signature Visuals)
 
-## 4. 视觉特效
+### 1. 环境光斑 (Ambient Bokeh)
+三个大型模糊圆形（blob），通过 CSS `@keyframes` 缓慢浮动且带有轻微缩放（呼吸感）：
+- **Blob 1 (Lilac)**: 左上角，高明度。
+- **Blob 2 (Violet)**: 右下角，主体色，带位移动画。
+- **Blob 3 (Spring Green)**: 游走于中下部，象征透过紫金草射进来的阳光，使用极低透明度。
 
-### 弥散光斑背景
+### 2. 画布颗粒 (Canvas Grain)
+通过全屏 SVG Filter 实现 `feTurbulence`（分形噪点）。
+`opacity: 0.05`，`pointer-events: none`。这是消除前端代码“生硬感”的终极武器。
 
-三个大型模糊圆形（blob），通过 CSS `@keyframes` 缓慢浮动：
-- Blob 1: Violet Light (#d6e0ff)，左上角
-- Blob 2: Violet Main (#8ca0ff)，右下角，较低透明度
-- Blob 3: Spring Green (#d4eda4)，中间偏右，最低透明度
+### 3. 露珠发光态 (Dewdrop Glow)
+重要按钮（如发送消息按钮）和激活态的输入框，不使用死板的 `border` 变色，而是使用同色系的外发光：
+`box-shadow: 0 4px 15px rgba(140, 160, 255, 0.3);`
 
-```css
-.blob { border-radius: 50%; filter: blur(80px); animation: 20s infinite alternate; }
-```
+## 5. 组件空间架构规范 (Component Architecture)
 
-### 噪点覆盖层
+### 破冰聊天页 (Icebreaker Chat) 空间布局
 
-全局 SVG feTurbulence noise，opacity 0.06，pointer-events: none。避免渐变的"塑料感"。
+抛弃企鹅/飞书式的“左侧导航+右侧聊天”铺满全屏模式。
+采用 **悬浮双子星架构**：
 
-### 按钮光晕
+1. **悬浮画框 (Main Container)**:
+   - 宽度 `92vw`，高度 `90vh`，绝对居中。
+   - 带有一圈微弱的白色内发光轮廓，背景为重度毛玻璃。
+2. **柔性分割 (Soft Split)**:
+   - 左侧主聊天（Violet主调）占据 60%；右侧军师私聊（Green点缀）占据 40%。
+   - 两者之间**禁止使用实线边框**。使用 `background: linear-gradient(to right, rgba(255,255,255,0.1), transparent)` 制造光的隔断。
+3. **沉浸式输入框 (Dewdrop Input)**:
+   - 背景使用较亮的 `rgba(255, 255, 255, 0.7)`。
+   - 圆角拉满 `border-radius: 30px`。
+   - Focus 状态下，增强白色内阴影，模拟水滴折射光芒。
 
-主 CTA 按钮使用 `box-shadow: 0 8px 24px rgba(140, 160, 255, 0.35)` 创造发光感。
+### 消息气泡规范
 
-## 5. 组件规范
+| 类型 | 样式定义 |
+|------|------|
+| **TA 的消息** | `bg: rgba(255,255,255,0.6)` + `border: 1px solid white` + 左下直角，如雾气般轻盈 |
+| **我的消息** | `bg: linear-gradient` (Violet Main to Lilac) + 白字 + 右下直角 + 散发紫色光晕 |
+| **军师提示框** | `bg: rgba(212,237,164,0.3)` + `border: Spring Green` + 文字色 `#5a7332`，清晰的局外人指引 |
 
-### 登录页
+## 6. 动效原则 (Motion & Choreography)
 
-- 背景：弥散光斑 + 噪点
-- 表单：毛玻璃卡片（glass 类），圆角 28px
-- 输入框：`rgba(255, 255, 255, 0.5)` 底色，Violet 边框和 focus ring
-- 按钮：Violet Main 底色 + 光晕阴影
+- **出场编排 (Staggered Entrance)**:
+  主容器采用 `float-up` 动画（0.8s, ease-out, 从下方 40px 伴随透明度浮现）。容器内元素（消息记录）依次延迟 100ms 浮现，如水波纹般荡漾开。
+- **有机缓动曲线 (Organic Easing)**:
+  彻底弃用 `linear` 或默认 `ease`。使用 `cubic-bezier(0.2, 0.8, 0.2, 1)`（迅捷启动，极其柔和的刹车），模拟自然风吹草动的物理感。
+- **微交互 (Micro-interactions)**:
+  按钮 Hover 时除了色彩加深，需伴随非常细微的 `transform: translateY(-2px)` 或 `scale(1.03)`，仿佛它漂浮在水面上被轻轻按下。
 
-### 聊天页导航栏
-
-- 背景：`rgba(251, 251, 252, 0.5)` + `backdrop-filter: blur(20px)`
-- 标题：Cormorant Garamond serif 字体
-- 在线状态：鼠尾草绿圆点
-
-### 消息输入区
-
-- 输入框：半透明白底 + blur + Violet 边框
-- 发送按钮：Violet Main 圆形 + 光晕阴影
-- 颜文字选择器：毛玻璃面板
-
-### 在线指示器
-
-- 头像底色：`rgba(140, 160, 255, 0.12)`
-- 首字母：Violet Deep (#6b82f0)
-- 在线点：`#6b8c5a`（深绿，与 Spring Green 区分）
-
-## 6. 动效原则
-
-- **缓动曲线**: `cubic-bezier(0.2, 0.8, 0.2, 1)` — 如微风拂过，非线性
-- **Stagger 入场**: 品牌名 → 副标题 → 表单 → 按钮，每项间隔 200-300ms
-- **消息入场**: `translateY(10px) → 0` + `opacity 0 → 1`，duration 300ms
-- **背景**: 持续缓慢浮动，20s 周期
+---
+*Violet Design System. Engineered to feel like a spring breeze.*

@@ -65,7 +65,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   userId: null,
   roomClosedReason: null,
 
-  connect: (userId: string, url: string = 'http://localhost:3000') => {
+  connect: (userId: string, url: string = `http://${window.location.hostname}:3000`) => {
     const existingSocket = get().socket;
     if (existingSocket?.connected) return;
 

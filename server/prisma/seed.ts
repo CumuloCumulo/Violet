@@ -11,6 +11,17 @@ async function main() {
   await prisma.relationship.deleteMany();
   await prisma.user.deleteMany();
 
+  // Create system user (platform infrastructure)
+  const system = await prisma.user.create({
+    data: {
+      id: 'system',
+      email: 'system@violet.local',
+      nickname: '系统',
+      password: '$2b$10$dummy_hash_not_for_production',
+      roles: [],
+    },
+  });
+
   // Create 4 test users
   const client1 = await prisma.user.create({
     data: {
@@ -129,7 +140,7 @@ async function main() {
     {
       content: '军师·小美 已加入聊天',
       type: 'SYSTEM' as const,
-      senderId: 'SYSTEM',
+      senderId: system.id,
       isSystem: true,
     },
   ];

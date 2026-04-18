@@ -3,6 +3,7 @@ import { Send, Smile, Keyboard } from 'lucide-react';
 
 interface MessageInputProps {
   onSend: (content: string) => void;
+  accentColor?: 'violet' | 'green';
 }
 
 const STORAGE_KEY = 'violet-recent-kaomoji';
@@ -31,7 +32,7 @@ const CATEGORIES = [
   },
   {
     name: '其他',
-    items: ['(￣ω￣)', '(*´▽`*)', '(￣▽￣")', '¯\\_(ツ)_/¯', '(°▽°)', '(≧◡≦)', '(─‿─)', '(◐‿◉)'],
+    items: ['(￣ω￣)', '(*´▽`*)', '(￣▽￣\")', '¯\\_(ツ)_/¯', '(°▽°)', '(≧◡≦)', '(─‿─)', '(◐‿◉)'],
   },
 ];
 
@@ -55,12 +56,13 @@ function saveRecent(kaomoji: string) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
-export function MessageInput({ onSend }: MessageInputProps) {
+export function MessageInput({ onSend, accentColor = 'violet' }: MessageInputProps) {
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [recent, setRecent] = useState<string[]>(getRecent);
   const [activeCategory, setActiveCategory] = useState(0);
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -97,19 +99,38 @@ export function MessageInput({ onSend }: MessageInputProps) {
     inputRef.current?.focus();
   }, []);
 
+  const isGreen = accentColor === 'green';
+
+  // Per-reference: wingman input bg is more transparent
+  const capsuleBg = isGreen
+    ? (focused ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.5)')
+    : (focused ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.7)');
+  const capsuleShadow = focused
+    ? 'inset 0 2px 4px rgba(0,0,0,0.01), 0 8px 24px rgba(140, 160, 255, 0.15)'
+    : 'inset 0 2px 4px rgba(0,0,0,0.02), 0 8px 16px rgba(0,0,0,0.03)';
+
+  const sendBg = isGreen ? '#d4eda4' : '#8ca0ff';
+  const sendBgHover = isGreen ? '#c4dda0' : '#758cf0';
+  const sendColor = isGreen ? '#5a7332' : '#ffffff';
+  const sendShadow = isGreen
+    ? '0 4px 10px rgba(212, 237, 164, 0.4)'
+    : '0 4px 10px rgba(140, 160, 255, 0.4)';
+
   return (
     <div
-      className="shrink-0"
-      style={{ borderTop: '1px solid rgba(140, 160, 255, 0.08)' }}
+      className="shrink-0 px-6 py-4"
+      style={{
+        background: 'linear-gradient(to top, rgba(255,255,255,0.4), transparent)',
+      }}
     >
       {showPicker && (
         <div
-          className="px-3 py-2.5"
+          className="mb-3 px-4 py-3 rounded-2xl"
           style={{
             background: 'rgba(255, 255, 255, 0.6)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(140, 160, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.5)',
           }}
         >
           {/* Recent */}
@@ -123,7 +144,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
                   <button
                     key={k}
                     onClick={() => insertKaomoji(k)}
-                    className="text-sm px-1.5 py-0.5 rounded-lg transition-all"
+                    className="text-sm px-1.5 py-0.5 rounded-lg transition-colors"
                     style={{ color: '#3a405a' }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.12)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
@@ -146,7 +167,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
                   <button
                     key={k}
                     onClick={() => insertKaomoji(k)}
-                    className="text-sm px-1.5 py-0.5 rounded-lg transition-all"
+                    className="text-sm px-1.5 py-0.5 rounded-lg transition-colors"
                     style={{ color: '#3a405a' }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.12)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
@@ -169,7 +190,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
                     className="shrink-0 text-xs px-2 py-0.5 rounded-full transition-all"
                     style={
                       activeCategory === i
-                        ? { background: '#8ca0ff', color: '#ffffff' }
+                        ? { background: sendBg, color: sendColor }
                         : { background: 'rgba(140, 160, 255, 0.1)', color: '#5a627a' }
                     }
                   >
@@ -182,7 +203,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
                   <button
                     key={k}
                     onClick={() => insertKaomoji(k)}
-                    className="text-sm px-1.5 py-0.5 rounded-lg transition-all"
+                    className="text-sm px-1.5 py-0.5 rounded-lg transition-colors"
                     style={{ color: '#3a405a' }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.12)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
@@ -198,27 +219,31 @@ export function MessageInput({ onSend }: MessageInputProps) {
           <button
             onClick={() => setExpanded((v) => !v)}
             className="w-full text-[11px] mt-2 pt-1.5 transition-colors"
-            style={{ color: '#8ca0ff', borderTop: '1px solid rgba(140, 160, 255, 0.08)' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#6b82f0'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#8ca0ff'; }}
+            style={{ color: sendBg, borderTop: '1px solid rgba(140, 160, 255, 0.08)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = sendBgHover; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = sendBg; }}
           >
             {expanded ? '收起' : '更多颜文字'}
           </button>
         </div>
       )}
-      <div className="flex items-center gap-2 px-3 py-2.5">
+
+      {/* Input capsule — matches reference .input-box exactly */}
+      <div
+        className="flex items-center rounded-[30px] transition-all"
+        style={{
+          background: capsuleBg,
+          border: '1px solid rgba(255, 255, 255, 0.9)',
+          boxShadow: capsuleShadow,
+          padding: '6px 6px 6px 20px',
+        }}
+      >
         <button
           onClick={() => { setShowPicker((v) => !v); setExpanded(false); }}
-          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-all"
+          className="shrink-0 flex items-center justify-center p-2 transition-colors bg-transparent border-none"
           style={{ color: '#7a829a' }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.1)';
-            (e.currentTarget as HTMLButtonElement).style.color = '#6b82f0';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-            (e.currentTarget as HTMLButtonElement).style.color = '#7a829a';
-          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = sendBg; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#7a829a'; }}
         >
           {showPicker ? <Keyboard size={18} /> : <Smile size={18} />}
         </button>
@@ -228,40 +253,33 @@ export function MessageInput({ onSend }: MessageInputProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="输入消息..."
-          className="flex-1 min-w-0 h-9 px-3 rounded-full text-sm outline-none transition-all"
-          style={{
-            background: 'rgba(255, 255, 255, 0.5)',
-            color: '#3a405a',
-            border: '1px solid rgba(140, 160, 255, 0.12)',
-            backdropFilter: 'blur(8px)',
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.7)';
-            e.currentTarget.style.borderColor = 'rgba(140, 160, 255, 0.35)';
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(140, 160, 255, 0.1)';
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
-            e.currentTarget.style.borderColor = 'rgba(140, 160, 255, 0.12)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={isGreen ? '向军师求助...' : '输入你想对TA说的话...'}
+          className="flex-1 min-w-0 border-none bg-transparent outline-none text-sm"
+          style={{ color: '#3a405a', fontFamily: 'inherit' }}
         />
         <button
           onClick={handleSend}
           disabled={!text.trim()}
-          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-all disabled:opacity-30"
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full transition-all disabled:opacity-30 border-none"
           style={{
-            background: '#8ca0ff',
-            color: '#ffffff',
-            boxShadow: text.trim() ? '0 4px 12px rgba(140, 160, 255, 0.3)' : 'none',
+            background: sendBg,
+            color: sendColor,
+            boxShadow: sendShadow,
           }}
           onMouseEnter={(e) => {
-            if (text.trim()) (e.currentTarget as HTMLButtonElement).style.background = '#7b90f0';
+            if (text.trim()) {
+              (e.currentTarget as HTMLButtonElement).style.background = sendBgHover;
+              (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.05)';
+            }
           }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#8ca0ff'; }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = sendBg;
+            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+          }}
         >
-          <Send size={16} />
+          <Send size={16} style={{ marginLeft: -2 }} />
         </button>
       </div>
     </div>

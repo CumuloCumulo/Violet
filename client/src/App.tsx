@@ -3,9 +3,9 @@ import { motion } from 'motion/react';
 import { ChatPage } from './pages/ChatPage';
 
 const DEV_MODE = import.meta.env.DEV;
-const DEV_USER_ID = 'dev_user_1';
-const DEV_RELATIONSHIP_ID = 'dev_rel_1';
-const DEV_WINGMAN_ID = 'dev_wingman_1';
+const DEV_USER_ID = 'test_client1';
+const DEV_RELATIONSHIP_ID = 'test_relationship_1';
+const DEV_WINGMAN_ID = 'test_wingman1';
 
 function App() {
   const [userId, setUserId] = useState(DEV_MODE ? DEV_USER_ID : '');
