@@ -50,14 +50,14 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async logout(@Res({ passthrough: true }) response: Response) {
+  logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('token');
     return { message: '已退出登录' };
   }
 
   @Post('me')
   @UseGuards(JwtAuthGuard)
-  async me(@Req() req: any) {
+  async me(@Req() req: { user: { userId: string } }) {
     return this.authService.validateUser(req.user.userId);
   }
 }

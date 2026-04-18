@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  getRequest(context: ExecutionContext) {
-    return context.switchToHttp().getRequest();
+  getRequest<T = unknown>(context: ExecutionContext): T {
+    return context.switchToHttp().getRequest<T>();
   }
 }

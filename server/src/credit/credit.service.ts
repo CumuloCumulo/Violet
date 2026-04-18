@@ -1,8 +1,12 @@
-import { Injectable, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 const CHECKIN_REWARD = 3;
-const MATCH_REQUEST_COST = 5;
+const _MATCH_REQUEST_COST = 5;
 
 @Injectable()
 export class CreditService {
@@ -22,7 +26,11 @@ export class CreditService {
 
     // Check if already checked in today (server timezone)
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const todayEnd = new Date(todayStart);
     todayEnd.setDate(todayEnd.getDate() + 1);
 
@@ -72,6 +80,6 @@ export class CreditService {
       throw new ForbiddenException('信用分不足');
     }
 
-    return (user.creditScore - amount);
+    return user.creditScore - amount;
   }
 }

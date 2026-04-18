@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
@@ -78,7 +83,7 @@ export class AuthService {
     });
   }
 
-  private sanitizeUser(user: any) {
+  private sanitizeUser(user: Record<string, unknown>) {
     const { password: _, ...result } = user;
     return result;
   }
