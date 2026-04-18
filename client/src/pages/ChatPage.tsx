@@ -6,16 +6,18 @@ import { ChatPanel } from '../components/ChatPanel';
 interface ChatPageProps {
   userId: string;
   relationshipId: string;
+  /** 私聊对象的 userId：当事人传军师 ID，军师传当事人 ID */
+  privateChatTargetId?: string;
+  /** 军师 ID（仅当事人需要，用于模式切换） */
   wingmanId?: string;
-  wingmanMode?: string;
   onExit?: () => void;
 }
 
 export function ChatPage({
   userId,
   relationshipId,
+  privateChatTargetId,
   wingmanId,
-  wingmanMode,
   onExit,
 }: ChatPageProps) {
   const connect = useChatStore((s) => s.connect);
@@ -24,6 +26,7 @@ export function ChatPage({
   const connected = useChatStore((s) => s.connected);
   const myRole = useChatStore((s) => s.myRole);
   const switchMode = useChatStore((s) => s.switchMode);
+  const rooms = useChatStore((s) => s.rooms);
 
   useEffect(() => {
     connect(userId);
@@ -41,11 +44,30 @@ export function ChatPage({
     };
   }, [relationshipId, leaveRoom]);
 
+  const room = rooms[relationshipId];
   const isWingman = myRole?.startsWith('wingman');
-  const isPrivateOnly = isWingman && wingmanMode === 'PRIVATE';
-  const showMainPanel = !isPrivateOnly;
-  const showPrivatePanel = !!wingmanId;
 
+  // 军师：根据 myRole 直接取自己的 mode
+  // 当事人：根据 wingmanId 匹配对应的 mode
+  let currentWingmanMode: string | null = null;
+  if (myRole === 'wingman1') {
+    currentWingmanMode = room?.wingmanMode1 ?? null;
+  } else if (myRole === 'wingman2') {
+    currentWingmanMode = room?.wingmanMode2 ?? null;
+  } else if (wingmanId) {
+    if (room?.wingmanId1 === wingmanId) {
+      currentWingmanMode = room.wingmanMode1;
+    } else if (room?.wingmanId2 === wingmanId) {
+      currentWingmanMode = room.wingmanMode2;
+    }
+  }
+
+  // 当事人：始终显示主聊天 + 私聊
+  // 军师：始终显示私聊；主聊天仅 ASSIST/SOLO 时显示
+  const showMainPanel = !isWingman || currentWingmanMode !== 'PRIVATE';
+  const showPrivatePanel = !!privateChatTargetId;
+
+  // 模式切换：仅当事人可操作
   const handleModeSwitch = useCallback(
     (mode: string) => {
       if (wingmanId) {
@@ -89,8 +111,8 @@ export function ChatPage({
             破冰聊天
           </h1>
 
-          {/* Mode Switcher - Pill Style */}
-          {!isWingman && wingmanId && (
+          {/* Mode Switcher — 仅当事人可见，且角色已确认 */}
+          {myRole && !isWingman && wingmanId && (
             <div
               className="flex rounded-full p-1"
               style={{
@@ -105,7 +127,7 @@ export function ChatPage({
                   onClick={() => handleModeSwitch(opt.value)}
                   className="px-4 py-1.5 rounded-full text-[13px] transition-all"
                   style={
-                    wingmanMode === opt.value
+                    currentWingmanMode === opt.value
                       ? { background: '#ffffff', color: '#8ca0ff', boxShadow: '0 2px 8px rgba(140, 160, 255, 0.2)', fontWeight: 500 }
                       : { color: '#7a829a' }
                   }
@@ -114,6 +136,16 @@ export function ChatPage({
                 </button>
               ))}
             </div>
+          )}
+
+          {/* Wingman mode indicator — 仅军师可见 */}
+          {isWingman && currentWingmanMode && (
+            <span
+              className="text-xs px-3 py-1 rounded-full"
+              style={{ background: 'rgba(212, 237, 164, 0.35)', color: '#5a7332', border: '1px solid rgba(212, 237, 164, 0.6)' }}
+            >
+              {currentWingmanMode === 'PRIVATE' ? '私聊模式' : currentWingmanMode === 'ASSIST' ? '辅助模式' : '代聊模式'}
+            </span>
           )}
         </header>
 
@@ -135,6 +167,7 @@ export function ChatPage({
                 myUserId={userId}
                 presenceKey={relationshipId}
                 accentColor="violet"
+                draftMode={isWingman && currentWingmanMode === 'ASSIST'}
               />
             </div>
           )}
@@ -148,7 +181,7 @@ export function ChatPage({
                 relationshipId={relationshipId}
                 title={isWingman ? '私聊窗口' : '军师私聊'}
                 messageType="PRIVATE"
-                targetUserId={wingmanId}
+                targetUserId={privateChatTargetId}
                 myUserId={userId}
                 accentColor="green"
               />

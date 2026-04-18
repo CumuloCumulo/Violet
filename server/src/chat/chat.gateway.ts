@@ -109,8 +109,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const messages = await this.chatService.getMessages(relationshipId, userId);
 
-    const { wingmanMode1, wingmanMode2 } =
+    const { wingmanMode1, wingmanMode2, wingmanId1, wingmanId2 } =
       await this.roomService.getWingmanModes(relationshipId);
+
     const visibleMessages = messages.filter((msg) => {
       const vis = this.chatService.computeVisibility(
         msg,
@@ -126,6 +127,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       relationshipId,
       messages: visibleMessages,
       role: member.role,
+      wingmanMode1,
+      wingmanMode2,
+      wingmanId1,
+      wingmanId2,
     });
 
     client.to(roomId).emit('userJoined', {
@@ -184,6 +189,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
               ? relationship.user1Id
               : relationship.user2Id;
         }
+      } else if (type === 'MAIN' && mode === 'ASSIST') {
+        client.emit('error', {
+          code: 'FORBIDDEN',
+          message: 'ASSIST mode wingmen must use draftMessage to send MAIN messages',
+        });
+        return;
       } else if (type === 'MAIN' && mode === 'PRIVATE') {
         client.emit('error', {
           code: 'FORBIDDEN',

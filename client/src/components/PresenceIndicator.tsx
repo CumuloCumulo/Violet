@@ -9,22 +9,25 @@ interface PresenceMember {
 
 interface PresenceIndicatorProps {
   relationshipId: string;
+  userId: string;
 }
 
-export function PresenceIndicator({ relationshipId }: PresenceIndicatorProps) {
+export function PresenceIndicator({ relationshipId, userId }: PresenceIndicatorProps) {
   const [members, setMembers] = useState<PresenceMember[]>([]);
 
   const fetchPresence = useCallback(async () => {
     try {
-      const res = await fetch(`/api/chat/${relationshipId}/presence`);
+      const res = await fetch(`/api/chat/${relationshipId}/presence`, {
+        headers: { 'x-user-id': userId },
+      });
       if (res.ok) {
         const data = await res.json();
-        setMembers(data.members ?? []);
+        setMembers(data.presence ?? data.members ?? []);
       }
     } catch {
       // ignore
     }
-  }, [relationshipId]);
+  }, [relationshipId, userId]);
 
   useEffect(() => {
     fetchPresence();

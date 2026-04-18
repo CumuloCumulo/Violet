@@ -12,6 +12,8 @@ interface ChatPanelProps {
   myUserId: string;
   presenceKey?: string;
   accentColor?: 'violet' | 'green';
+  /** 军师辅助模式下主聊天走 draftMessage 而非 sendMessage */
+  draftMode?: boolean;
 }
 
 export function ChatPanel({
@@ -22,10 +24,12 @@ export function ChatPanel({
   myUserId,
   presenceKey,
   accentColor = 'violet',
+  draftMode = false,
 }: ChatPanelProps) {
   const rawMessages = useChatStore((s) => s.messages[relationshipId]);
   const messages = rawMessages ?? [];
   const sendMessage = useChatStore((s) => s.sendMessage);
+  const draftMessage = useChatStore((s) => s.draftMessage);
   const confirmMessage = useChatStore((s) => s.confirmMessage);
   const rejectMessage = useChatStore((s) => s.rejectMessage);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -83,11 +87,13 @@ export function ChatPanel({
     (content: string) => {
       if (messageType === 'PRIVATE' && targetUserId) {
         sendMessage(relationshipId, content, 'PRIVATE', targetUserId);
+      } else if (draftMode) {
+        draftMessage(relationshipId, content);
       } else {
         sendMessage(relationshipId, content, messageType);
       }
     },
-    [relationshipId, messageType, targetUserId, sendMessage],
+    [relationshipId, messageType, targetUserId, sendMessage, draftMessage, draftMode],
   );
 
   return (
@@ -103,7 +109,7 @@ export function ChatPanel({
           {title}
         </h2>
         {presenceKey && (
-          <PresenceIndicator relationshipId={relationshipId} />
+          <PresenceIndicator relationshipId={relationshipId} userId={myUserId} />
         )}
       </div>
 
@@ -202,7 +208,8 @@ function MessageBubble({
 
   // Pending message
   if (isPending) {
-    const isForMe = message.targetUserId === myUserId;
+    const isTarget = message.targetUserId === myUserId;
+    const isDraftAuthor = isSelf;
     return (
       <motion.div
         className={`flex ${isSelf ? 'justify-end' : 'justify-start'}`}
@@ -231,7 +238,8 @@ function MessageBubble({
             <p className="whitespace-pre-wrap break-words" style={{ color: '#3a405a', fontSize: 14, fontWeight: 400, lineHeight: 1.5 }}>
               {message.content}
             </p>
-            {isForMe && (
+            {/* 当事人：确认/拒绝 */}
+            {isTarget && (
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={onConfirm}
@@ -253,6 +261,17 @@ function MessageBubble({
                 >
                   拒绝
                 </button>
+              </div>
+            )}
+            {/* 军师（起草者）：等待确认提示 */}
+            {isDraftAuthor && !isTarget && (
+              <div className="mt-2 text-center">
+                <span
+                  className="text-[11px] px-3 py-1 rounded-full"
+                  style={{ background: 'rgba(196, 163, 90, 0.15)', color: '#8a7340' }}
+                >
+                  等待当事人确认...
+                </span>
               </div>
             )}
           </div>

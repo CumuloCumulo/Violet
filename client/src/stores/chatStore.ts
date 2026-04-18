@@ -28,6 +28,8 @@ export interface RoomMember {
 
 interface RoomState {
   members: RoomMember[];
+  wingmanId1: string | null;
+  wingmanId2: string | null;
   wingmanMode1: string | null;
   wingmanMode2: string | null;
 }
@@ -82,13 +84,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ connected: false });
     });
 
-    socket.on('roomJoined', (data: { relationshipId: string; messages: ChatMessage[]; role: string }) => {
+    socket.on('roomJoined', (data: { relationshipId: string; messages: ChatMessage[]; role: string; wingmanMode1?: string | null; wingmanMode2?: string | null; wingmanId1?: string | null; wingmanId2?: string | null }) => {
       set((state) => ({
         activeRoom: data.relationshipId,
         myRole: data.role,
         messages: {
           ...state.messages,
           [data.relationshipId]: data.messages,
+        },
+        rooms: {
+          ...state.rooms,
+          [data.relationshipId]: {
+            members: state.rooms[data.relationshipId]?.members ?? [],
+            wingmanId1: data.wingmanId1 ?? null,
+            wingmanId2: data.wingmanId2 ?? null,
+            wingmanMode1: data.wingmanMode1 ?? null,
+            wingmanMode2: data.wingmanMode2 ?? null,
+          },
         },
       }));
     });
@@ -97,8 +109,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set((state) => {
         const relId = message.relationshipId;
         const existing = state.messages[relId] ?? [];
-        // Avoid duplicates
-        if (existing.some((m) => m.id === message.id)) return state;
+        // If same ID exists, remove old and append at end (e.g. PENDING → MAIN after confirm)
+        if (existing.some((m) => m.id === message.id)) {
+          return {
+            messages: {
+              ...state.messages,
+              [relId]: [...existing.filter((m) => m.id !== message.id), message],
+            },
+          };
+        }
         return {
           messages: {
             ...state.messages,
@@ -143,7 +162,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     socket.on('modeSwitched', ({ wingmanId, mode }: { wingmanId: string; mode: string }) => {
-      console.log(`Wingman ${wingmanId} mode switched to ${mode}`);
+      const activeRoom = get().activeRoom;
+      if (!activeRoom) return;
+      const room = get().rooms[activeRoom];
+      if (!room) return;
+
+      const updatedRoom = { ...room };
+      if (wingmanId === room.wingmanId1) {
+        updatedRoom.wingmanMode1 = mode;
+      } else if (wingmanId === room.wingmanId2) {
+        updatedRoom.wingmanMode2 = mode;
+      }
+
+      set((state) => ({
+        rooms: {
+          ...state.rooms,
+          [activeRoom]: updatedRoom,
+        },
+      }));
     });
 
     socket.on('error', (error: { code: string; message: string }) => {

@@ -81,7 +81,12 @@ export class RoomService {
 
   async getWingmanModes(
     relationshipId: string,
-  ): Promise<{ wingmanMode1: string | null; wingmanMode2: string | null }> {
+  ): Promise<{
+    wingmanMode1: string | null;
+    wingmanMode2: string | null;
+    wingmanId1: string | null;
+    wingmanId2: string | null;
+  }> {
     const assignments = await this.prisma.wingmanAssignment.findMany({
       where: { relationshipId, leftAt: null },
     });
@@ -92,6 +97,8 @@ export class RoomService {
     return {
       wingmanMode1: w1?.mode ?? null,
       wingmanMode2: w2?.mode ?? null,
+      wingmanId1: w1?.userId ?? null,
+      wingmanId2: w2?.userId ?? null,
     };
   }
 }
