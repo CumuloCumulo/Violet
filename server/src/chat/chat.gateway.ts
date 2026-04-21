@@ -64,8 +64,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 2. Fallback: auth/query param (DEV mode)
     if (!userId) {
-      userId =
-        client.handshake.auth?.userId ?? client.handshake.query?.userId;
+      userId = client.handshake.auth?.userId ?? client.handshake.query?.userId;
     }
 
     if (!userId || typeof userId !== 'string') {
@@ -216,7 +215,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       } else if (type === 'MAIN' && mode === 'ASSIST') {
         client.emit('error', {
           code: 'FORBIDDEN',
-          message: 'ASSIST mode wingmen must use draftMessage to send MAIN messages',
+          message:
+            'ASSIST mode wingmen must use draftMessage to send MAIN messages',
         });
         return;
       } else if (type === 'MAIN' && mode === 'PRIVATE') {

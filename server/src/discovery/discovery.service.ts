@@ -1,4 +1,10 @@
-import { Injectable, BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreditService } from '../credit/credit.service.js';
 
@@ -112,7 +118,9 @@ export class DiscoveryService {
       where: {
         toUserId: userId,
         status: 'PENDING',
-        createdAt: { lt: new Date(Date.now() - EXPIRATION_HOURS * 60 * 60 * 1000) },
+        createdAt: {
+          lt: new Date(Date.now() - EXPIRATION_HOURS * 60 * 60 * 1000),
+        },
       },
       data: { status: 'EXPIRED' },
     });
@@ -219,7 +227,9 @@ export class DiscoveryService {
       where: {
         fromUserId: userId,
         status: 'PENDING',
-        createdAt: { lt: new Date(Date.now() - EXPIRATION_HOURS * 60 * 60 * 1000) },
+        createdAt: {
+          lt: new Date(Date.now() - EXPIRATION_HOURS * 60 * 60 * 1000),
+        },
       },
       data: { status: 'EXPIRED' },
     });

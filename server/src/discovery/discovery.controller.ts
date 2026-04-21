@@ -30,11 +30,11 @@ export class DiscoveryController {
   }
 
   @Post('match-request')
-  async sendMatchRequest(
-    @Req() req: any,
-    @Body() body: { toUserId: string },
-  ) {
-    return this.discoveryService.sendMatchRequest(req.user.userId, body.toUserId);
+  async sendMatchRequest(@Req() req: any, @Body() body: { toUserId: string }) {
+    return this.discoveryService.sendMatchRequest(
+      req.user.userId,
+      body.toUserId,
+    );
   }
 
   @Get('match-requests/sent')
@@ -48,18 +48,12 @@ export class DiscoveryController {
   }
 
   @Post('match-request/:id/accept')
-  async acceptMatchRequest(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  async acceptMatchRequest(@Req() req: any, @Param('id') id: string) {
     return this.discoveryService.acceptMatchRequest(id, req.user.userId);
   }
 
   @Post('match-request/:id/reject')
-  async rejectMatchRequest(
-    @Req() req: any,
-    @Param('id') id: string,
-  ) {
+  async rejectMatchRequest(@Req() req: any, @Param('id') id: string) {
     return this.discoveryService.rejectMatchRequest(id, req.user.userId);
   }
 }

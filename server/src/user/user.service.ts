@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { validateInterests } from './interest-tags.js';
 
@@ -54,10 +58,7 @@ export class UserService {
     }
 
     // Check cooldown
-    if (
-      user.wingmanCertCooldown &&
-      user.wingmanCertCooldown > new Date()
-    ) {
+    if (user.wingmanCertCooldown && user.wingmanCertCooldown > new Date()) {
       throw new ForbiddenException('冷却期尚未结束，请稍后再试');
     }
 

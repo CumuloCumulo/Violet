@@ -11,7 +11,14 @@ import { DevModule } from './dev/dev.module.js';
 const devImports = process.env['NODE_ENV'] !== 'production' ? [DevModule] : [];
 
 @Module({
-  imports: [AuthModule, UserModule, CreditModule, DiscoveryModule, ChatModule, ...devImports],
+  imports: [
+    AuthModule,
+    UserModule,
+    CreditModule,
+    DiscoveryModule,
+    ChatModule,
+    ...devImports,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -79,9 +79,7 @@ export class RoomService {
     return { allowed: true };
   }
 
-  async getWingmanModes(
-    relationshipId: string,
-  ): Promise<{
+  async getWingmanModes(relationshipId: string): Promise<{
     wingmanMode1: string | null;
     wingmanMode2: string | null;
     wingmanId1: string | null;
