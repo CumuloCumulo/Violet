@@ -56,7 +56,9 @@ jobs:
 
       # --- Write .env file ---
       - name: Write .env file
-        run: echo "${{ secrets.SERVER_ENV }}" > /tmp/violet-env
+        run: echo "$SERVER_ENV" > /tmp/violet-env
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
 
       # --- Upload backend ---
       - name: Upload backend to server
