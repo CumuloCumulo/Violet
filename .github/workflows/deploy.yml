@@ -114,14 +114,22 @@ jobs:
           fi
           echo "Frontend OK: HTTP $STATUS"
 
+      - name: Wait for backend startup
+        run: sleep 5
+
       - name: Verify API
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SERVER_HOST }}/api/)
-          if [ "$STATUS" != "200" ]; then
-            echo "API verification failed: HTTP $STATUS"
-            exit 1
-          fi
-          echo "API OK: HTTP $STATUS"
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SERVER_HOST }}/api/)
+            if [ "$STATUS" = "200" ]; then
+              echo "API OK: HTTP $STATUS"
+              exit 0
+            fi
+            echo "Attempt $i: API returned $STATUS, retrying in 5s..."
+            sleep 5
+          done
+          echo "API verification failed after 3 attempts"
+          exit 1
 
       # --- Cleanup ---
       - name: Cleanup
