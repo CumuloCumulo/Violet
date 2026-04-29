@@ -1,0 +1,122 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: server/pnpm-lock.yaml
+
+      # --- Build backend ---
+      - name: Build backend
+        working-directory: server
+        run: |
+          pnpm install
+          npx prisma generate
+          pnpm build
+
+      # --- Build frontend ---
+      - name: Build frontend
+        working-directory: client
+        run: |
+          pnpm install
+          pnpm build
+
+      # --- Package artifacts ---
+      - name: Package artifacts
+        run: |
+          tar czf /tmp/violet-server.tar.gz -C server dist prisma package.json pnpm-lock.yaml
+          tar czf /tmp/violet-client.tar.gz -C client dist
+
+      # --- Setup SSH ---
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.SERVER_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+      # --- Upload backend ---
+      - name: Upload backend to server
+        run: |
+          scp -i ~/.ssh/deploy_key /tmp/violet-server.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/violet/server/
+
+      # --- Upload frontend ---
+      - name: Upload frontend to server
+        run: |
+          scp -i ~/.ssh/deploy_key /tmp/violet-client.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/violet/client/
+
+      # --- Deploy on server ---
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'DEPLOY'
+          set -e
+
+          # Write .env from secret
+          echo "$SERVER_ENV_B64" | base64 -d > /home/violet/server/.env
+
+          # Deploy backend
+          cd /home/violet/server
+          tar xzf violet-server.tar.gz
+          rm -f violet-server.tar.gz
+          pnpm install --prod
+
+          # Prisma: resolve binary path (pnpm strict hoisting)
+          PRISMA_BIN=$(find node_modules/.pnpm -path '*/prisma@*/node_modules/prisma/build/index.js' | head -1)
+          node $PRISMA_BIN generate
+          node $PRISMA_BIN migrate deploy
+
+          # Restart backend
+          pm2 restart violet-api
+
+          # Deploy frontend
+          cd /home/violet/client
+          tar xzf violet-client.tar.gz
+          rm -f violet-client.tar.gz
+
+          echo "Deploy complete!"
+          DEPLOY
+        env:
+          SERVER_ENV_B64: ${{ secrets.SERVER_ENV_B64 }}
+
+      # --- Verify deployment ---
+      - name: Verify frontend
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SERVER_HOST }}/)
+          if [ "$STATUS" != "200" ]; then
+            echo "Frontend verification failed: HTTP $STATUS"
+            exit 1
+          fi
+          echo "Frontend OK: HTTP $STATUS"
+
+      - name: Verify API
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.SERVER_HOST }}/api/)
+          if [ "$STATUS" != "200" ]; then
+            echo "API verification failed: HTTP $STATUS"
+            exit 1
+          fi
+          echo "API OK: HTTP $STATUS"
+
+      # --- Cleanup ---
+      - name: Cleanup
+        if: always()
+        run: rm -f /tmp/violet-server.tar.gz /tmp/violet-client.tar.gz ~/.ssh/deploy_key

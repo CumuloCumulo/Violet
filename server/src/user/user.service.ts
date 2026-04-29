@@ -2,7 +2,9 @@ import {
   Injectable,
   BadRequestException,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { validateInterests } from './interest-tags.js';
 
@@ -107,5 +109,46 @@ export class UserService {
       isActive: user.isActive,
       lastActiveAt: user.lastActiveAt,
     };
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('用户不存在');
+
+    const passwordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!passwordValid) {
+      throw new UnauthorizedException('当前密码错误');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { success: true };
+  }
+
+  async changeContactEmail(userId: string, newEmail: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('用户不存在');
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      throw new BadRequestException('邮箱格式不正确');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { contactEmail: newEmail },
+    });
+
+    const { password: _, ...result } = updatedUser;
+    return result;
   }
 }

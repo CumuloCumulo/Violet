@@ -26,9 +26,8 @@ export class DiscoveryService {
         where: {
           id: { not: userId },
           lastActiveAt: { gte: sevenDaysAgo },
-          isActive: true,
         },
-        orderBy: { lastActiveAt: 'desc' },
+        orderBy: [{ isActive: 'desc' }, { lastActiveAt: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         select: {
@@ -46,7 +45,6 @@ export class DiscoveryService {
         where: {
           id: { not: userId },
           lastActiveAt: { gte: sevenDaysAgo },
-          isActive: true,
         },
       }),
     ]);

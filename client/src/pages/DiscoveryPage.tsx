@@ -149,12 +149,21 @@ export function DiscoveryPage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs" style={{ color: '#7a829a' }}>{user?.creditScore ?? 0} 分</span>
+          {user?.roles.includes('ADMIN') && (
+            <button
+              onClick={() => setPage('admin')}
+              className="text-xs px-3 py-1.5 rounded-full transition-all"
+              style={{ background: 'rgba(212,237,164,0.35)', color: '#5a7332', border: '1px solid rgba(212,237,164,0.6)' }}
+            >
+              管理
+            </button>
+          )}
           <button
-            onClick={() => setPage('profile-setup')}
+            onClick={() => setPage('profile')}
             className="text-xs px-3 py-1.5 rounded-full transition-all"
             style={{ background: 'rgba(255,255,255,0.5)', color: '#5a627a', border: '1px solid rgba(255,255,255,0.8)' }}
           >
-            画像
+            个人中心
           </button>
           <button
             onClick={logout}

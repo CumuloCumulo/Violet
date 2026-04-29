@@ -11,6 +11,7 @@ datasource db {
 enum UserRole {
   CLIENT      // 当事人
   WINGMAN     // 军师
+  ADMIN       // 管理员
 }
 
 // 关系阶段枚举
@@ -70,7 +71,8 @@ enum WingmanCertStatus {
 // ==================== 用户 ====================
 model User {
   id           String   @id @default(cuid())
-  email        String   @unique          // 南大邮箱
+  email        String   @unique          // 南大校园邮箱（不可修改）
+  contactEmail String?                   // 常用邮箱
   nickname     String                    // 昵称
   password     String                    // 加密密码
   avatar       String?                   // 头像URL
@@ -115,6 +117,10 @@ model User {
   receivedMatchRequests MatchRequest[] @relation("ReceivedRequests")
   // 签到记录
   checkinRecords CheckinRecord[]
+  // 收到的信用分调整
+  creditLogs     CreditLog[]
+  // 管理员操作记录
+  adminActions   CreditLog[] @relation("AdminActions")
 }
 
 // ==================== 关系（牵线/破冰/暧昧） ====================
@@ -253,4 +259,20 @@ model CheckinRecord {
   user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId, createdAt])
+}
+
+// ==================== 信用分调整日志 ====================
+model CreditLog {
+  id        String   @id @default(cuid())
+  userId    String                        // 被调整的用户
+  adminId   String                        // 执行调整的管理员
+  amount    Int                           // 正数增加，负数扣减
+  reason    String                        // 调整原因
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  admin     User     @relation("AdminActions", fields: [adminId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([adminId, createdAt])
 }

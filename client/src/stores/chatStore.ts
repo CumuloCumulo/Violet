@@ -67,13 +67,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
   userId: null,
   roomClosedReason: null,
 
-  connect: (userId: string, url: string = `http://${window.location.hostname}:3000`) => {
+  connect: (userId: string, url: string = window.location.origin) => {
     const existingSocket = get().socket;
     if (existingSocket?.connected) return;
 
     const socket = io(url, {
       auth: { userId },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
     });
 
     socket.on('connect', () => {

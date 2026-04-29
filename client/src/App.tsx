@@ -5,6 +5,8 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProfileSetupPage } from './pages/ProfileSetupPage';
 import { DiscoveryPage } from './pages/DiscoveryPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { useAuthStore } from './stores/authStore';
 import { useDevData, type DevUser, type DevRelationship } from './hooks/useDevData';
 
@@ -110,6 +112,8 @@ function DevApp() {
   // If authenticated, show production-style pages
   if (authUser && page !== 'login' && page !== 'register') {
     if (page === 'profile-setup') return <ProfileSetupPage />;
+    if (page === 'profile') return <ProfilePage />;
+    if (page === 'admin') return <AdminDashboardPage />;
     if (page === 'discovery') return <DiscoveryPage />;
   }
 
@@ -319,6 +323,8 @@ function ProdApp() {
 
   if (page === 'register') return <RegisterPage />;
   if (page === 'profile-setup') return <ProfileSetupPage />;
+  if (page === 'profile') return <ProfilePage />;
+  if (page === 'admin' && user?.roles.includes('ADMIN')) return <AdminDashboardPage />;
   if (page === 'discovery' && user) return <DiscoveryPage />;
 
   return <LoginPage />;

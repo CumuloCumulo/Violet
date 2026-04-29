@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { CreditModule } from './credit/credit.module.js';
 import { DiscoveryModule } from './discovery/discovery.module.js';
+import { AdminModule } from './admin/admin.module.js';
 import { DevModule } from './dev/dev.module.js';
 
 const devImports = process.env['NODE_ENV'] !== 'production' ? [DevModule] : [];
@@ -17,6 +18,7 @@ const devImports = process.env['NODE_ENV'] !== 'production' ? [DevModule] : [];
     CreditModule,
     DiscoveryModule,
     ChatModule,
+    AdminModule,
     ...devImports,
   ],
   controllers: [AppController],

@@ -48,4 +48,24 @@ export class UserController {
   ) {
     return this.userService.certifyWingman(req.user.userId, body);
   }
+
+  @Patch('password')
+  async changePassword(
+    @Req() req: any,
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
+    return this.userService.changePassword(
+      req.user.userId,
+      body.currentPassword,
+      body.newPassword,
+    );
+  }
+
+  @Patch('contact-email')
+  async changeContactEmail(
+    @Req() req: any,
+    @Body() body: { newEmail: string },
+  ) {
+    return this.userService.changeContactEmail(req.user.userId, body.newEmail);
+  }
 }

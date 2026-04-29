@@ -4,6 +4,7 @@ import { apiFetch } from '../lib/api';
 export interface AuthUser {
   id: string;
   email: string;
+  contactEmail: string | null;
   nickname: string;
   avatar: string | null;
   gender: string | null;
@@ -20,7 +21,7 @@ export interface AuthUser {
   updatedAt: string;
 }
 
-type AppPage = 'login' | 'register' | 'profile-setup' | 'discovery' | 'chat';
+type AppPage = 'login' | 'register' | 'profile-setup' | 'discovery' | 'chat' | 'profile' | 'admin';
 
 interface AuthState {
   user: AuthUser | null;
