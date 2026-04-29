@@ -54,6 +54,10 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           echo "${{ secrets.SERVER_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
 
+      # --- Write .env file ---
+      - name: Write .env file
+        run: echo "${{ secrets.SERVER_ENV }}" > /tmp/violet-env
+
       # --- Upload backend ---
       - name: Upload backend to server
         run: |
@@ -64,14 +68,16 @@ jobs:
         run: |
           scp -i ~/.ssh/deploy_key /tmp/violet-client.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/violet/client/
 
+      # --- Upload .env ---
+      - name: Upload .env to server
+        run: |
+          scp -i ~/.ssh/deploy_key /tmp/violet-env ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/violet/server/.env
+
       # --- Deploy on server ---
       - name: Deploy on server
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'DEPLOY'
           set -e
-
-          # Write .env from secret
-          echo "$SERVER_ENV_B64" | base64 -d > /home/violet/server/.env
 
           # Deploy backend
           cd /home/violet/server
@@ -94,8 +100,6 @@ jobs:
 
           echo "Deploy complete!"
           DEPLOY
-        env:
-          SERVER_ENV_B64: ${{ secrets.SERVER_ENV_B64 }}
 
       # --- Verify deployment ---
       - name: Verify frontend
