@@ -157,14 +157,28 @@ export class DiscoveryService {
       include: {
         user1: {
           select: {
-            id: true, nickname: true, gender: true, campus: true,
-            grade: true, interests: true, declaration: true, wechat: true, qq: true,
+            id: true,
+            nickname: true,
+            gender: true,
+            campus: true,
+            grade: true,
+            interests: true,
+            declaration: true,
+            wechat: true,
+            qq: true,
           },
         },
         user2: {
           select: {
-            id: true, nickname: true, gender: true, campus: true,
-            grade: true, interests: true, declaration: true, wechat: true, qq: true,
+            id: true,
+            nickname: true,
+            gender: true,
+            campus: true,
+            grade: true,
+            interests: true,
+            declaration: true,
+            wechat: true,
+            qq: true,
           },
         },
         wingmen: {
@@ -184,14 +198,28 @@ export class DiscoveryService {
           include: {
             user1: {
               select: {
-                id: true, nickname: true, gender: true, campus: true,
-                grade: true, interests: true, declaration: true, wechat: true, qq: true,
+                id: true,
+                nickname: true,
+                gender: true,
+                campus: true,
+                grade: true,
+                interests: true,
+                declaration: true,
+                wechat: true,
+                qq: true,
               },
             },
             user2: {
               select: {
-                id: true, nickname: true, gender: true, campus: true,
-                grade: true, interests: true, declaration: true, wechat: true, qq: true,
+                id: true,
+                nickname: true,
+                gender: true,
+                campus: true,
+                grade: true,
+                interests: true,
+                declaration: true,
+                wechat: true,
+                qq: true,
               },
             },
             wingmen: {
@@ -206,7 +234,7 @@ export class DiscoveryService {
     });
 
     const seenIds = new Set<string>();
-    const results: any[] = [];
+    const results: Array<Record<string, unknown>> = [];
 
     // 当事人关系
     for (const rel of asClient) {
@@ -224,10 +252,18 @@ export class DiscoveryService {
         createdAt: rel.createdAt,
         otherUser,
         myWingman: myWingman
-          ? { id: myWingman.user.id, nickname: myWingman.user.nickname, mode: myWingman.mode }
+          ? {
+              id: myWingman.user.id,
+              nickname: myWingman.user.nickname,
+              mode: myWingman.mode,
+            }
           : null,
         otherWingman: otherWingman
-          ? { id: otherWingman.user.id, nickname: otherWingman.user.nickname, mode: otherWingman.mode }
+          ? {
+              id: otherWingman.user.id,
+              nickname: otherWingman.user.nickname,
+              mode: otherWingman.mode,
+            }
           : null,
       });
     }

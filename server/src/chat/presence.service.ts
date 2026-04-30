@@ -81,12 +81,23 @@ export class PresenceService implements OnModuleDestroy {
    * Key: flirting-pending:<userId> → JSON { relationshipId, fromUserId }
    * TTL: 7 days
    */
-  async storePendingProposal(userId: string, relationshipId: string, fromUserId: string): Promise<void> {
+  async storePendingProposal(
+    userId: string,
+    relationshipId: string,
+    fromUserId: string,
+  ): Promise<void> {
     const key = `flirting-pending:${userId}:${relationshipId}`;
-    await this.redis.set(key, JSON.stringify({ relationshipId, fromUserId }), 'EX', 7 * 24 * 3600);
+    await this.redis.set(
+      key,
+      JSON.stringify({ relationshipId, fromUserId }),
+      'EX',
+      7 * 24 * 3600,
+    );
   }
 
-  async getPendingProposals(userId: string): Promise<Array<{ relationshipId: string; fromUserId: string }>> {
+  async getPendingProposals(
+    userId: string,
+  ): Promise<Array<{ relationshipId: string; fromUserId: string }>> {
     const pattern = `flirting-pending:${userId}:*`;
     const keys = await this.redis.keys(pattern);
     if (keys.length === 0) return [];
@@ -94,10 +105,17 @@ export class PresenceService implements OnModuleDestroy {
     const values = await this.redis.mget(...keys);
     return values
       .filter((v): v is string => v !== null)
-      .map((v) => JSON.parse(v));
+      .map((v) => {
+        const parsed: { relationshipId: string; fromUserId: string } =
+          JSON.parse(v);
+        return parsed;
+      });
   }
 
-  async removePendingProposal(userId: string, relationshipId: string): Promise<void> {
+  async removePendingProposal(
+    userId: string,
+    relationshipId: string,
+  ): Promise<void> {
     const key = `flirting-pending:${userId}:${relationshipId}`;
     await this.redis.del(key);
   }
