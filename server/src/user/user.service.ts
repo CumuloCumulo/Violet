@@ -96,6 +96,14 @@ export class UserService {
   }
 
   // Get anonymous profile for discovery (no nickname/avatar)
+  async getPublicProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, nickname: true, avatar: true },
+    });
+    return user;
+  }
+
   async getAnonymousProfile(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return null;

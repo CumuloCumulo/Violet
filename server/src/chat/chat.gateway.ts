@@ -108,27 +108,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    const canSend = await this.roomService.canSendToRoom(
-      relationshipId,
-      userId,
-      'MAIN',
-    );
-    if (!canSend.allowed) {
-      client.emit('error', { code: 'FORBIDDEN', message: canSend.reason });
+    const relationship =
+      await this.chatService.findRelationshipById(relationshipId);
+    if (!relationship) {
+      client.emit('error', { code: 'NOT_FOUND', message: 'Relationship not found' });
       return;
     }
+
+    // Allow joining for ICEBREAKING (normal) and FLIRTING (read-only)
+    // Reject for other statuses
+    if (relationship.status !== 'ICEBREAKING' && relationship.status !== 'FLIRTING') {
+      client.emit('error', { code: 'FORBIDDEN', message: 'Room is not accessible' });
+      return;
+    }
+
+    const isReadOnly = relationship.status === 'FLIRTING';
 
     const roomId = this.roomService.getRoomId(relationshipId);
     client.join(roomId);
     client.data.relationshipId = relationshipId;
     client.data.role = member.role;
 
-    await this.presenceService.setOnline(
-      userId,
-      client.id,
-      relationshipId,
-      member.role,
-    );
+    if (!isReadOnly) {
+      await this.presenceService.setOnline(
+        userId,
+        client.id,
+        relationshipId,
+        member.role,
+      );
+    }
 
     const messages = await this.chatService.getMessages(relationshipId, userId);
 
@@ -146,19 +154,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return vis.canSee;
     });
 
-    const relationship =
-      await this.chatService.findRelationshipById(relationshipId);
-
     client.emit('roomJoined', {
       relationshipId,
       messages: visibleMessages,
       role: member.role,
-      client1Id: relationship?.user1Id ?? null,
-      client2Id: relationship?.user2Id ?? null,
+      client1Id: relationship.user1Id,
+      client2Id: relationship.user2Id,
       wingmanMode1,
       wingmanMode2,
       wingmanId1,
       wingmanId2,
+      readOnly: isReadOnly,
     });
 
     client.to(roomId).emit('userJoined', {
@@ -435,14 +441,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     await this.chatService.updateWingmanMode(assignment.id, mode);
 
+    // Send mode switch notification as PRIVATE message to client↔wingman pair
+    const targetClientId =
+      assignment.side === 1 ? relationship.user1Id : relationship.user2Id;
+
     const wingman = await this.chatService.findUserById(wingmanId);
-    const sysMsg = await this.chatService.createSystemMessage(
+    const sysMsg = await this.chatService.createMessage({
       relationshipId,
-      `${wingman?.nickname ?? '军师'} 的介入模式已切换为 ${mode}`,
+      senderId: 'system',
+      content: `${wingman?.nickname ?? '军师'} 的介入模式已切换为 ${mode}`,
+      type: 'PRIVATE' as any,
+      targetUserId: wingmanId,
+      isSystem: true,
+    });
+
+    await this.emitToUsers(
+      relationshipId,
+      [targetClientId, wingmanId],
+      'newMessage',
+      sysMsg,
     );
 
     const roomId = this.roomService.getRoomId(relationshipId);
-    this.server.to(roomId).emit('newMessage', sysMsg);
     this.server.to(roomId).emit('modeSwitched', { wingmanId, mode });
   }
 
@@ -533,6 +553,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const _roomId = this.roomService.getRoomId(relationshipId);
 
+    if (event.type === 'roomReadOnly') {
+      // Flirting phase: room becomes read-only, don't disconnect
+      this.server.to(_roomId).emit('roomReadOnly', {
+        relationshipId,
+        reason: event.reason,
+        message: event.message,
+      });
+    }
+
     if (event.type === 'roomClosed') {
       this.server.to(_roomId).emit('roomClosed', {
         relationshipId,
@@ -593,6 +622,54 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const sockData = (sock as any).data;
       if (sockData?.userId && userIds.includes(sockData.userId)) {
         this.server.to(sock.id).emit(event, data);
+      }
+    }
+  }
+
+  /**
+   * Notify client that a wingman has been assigned to their relationship.
+   * Called by WingmanTaskController after approval.
+   */
+  async emitWingmanAssigned(
+    relationshipId: string,
+    clientId: string,
+    wingmanId: string,
+    side: number,
+    mode: string,
+  ) {
+    // Find client's socket and push event
+    const sockets = await this.server.fetchSockets();
+    for (const sock of sockets) {
+      const sockData = (sock as any).data;
+      if (sockData?.userId === clientId) {
+        this.server.to(sock.id).emit('wingmanAssigned', {
+          relationshipId,
+          wingmanId,
+          side,
+          mode,
+        });
+      }
+    }
+  }
+
+  /**
+   * Notify wingman that their application was approved.
+   */
+  async emitWingmanApproved(
+    relationshipId: string,
+    wingmanId: string,
+    side: number,
+    mode: string,
+  ) {
+    const sockets = await this.server.fetchSockets();
+    for (const sock of sockets) {
+      const sockData = (sock as any).data;
+      if (sockData?.userId === wingmanId) {
+        this.server.to(sock.id).emit('wingmanApproved', {
+          relationshipId,
+          side,
+          mode,
+        });
       }
     }
   }

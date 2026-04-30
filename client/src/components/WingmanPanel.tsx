@@ -14,6 +14,14 @@ interface WingmanPanelProps {
   relationshipStatus: string;
 }
 
+interface WingmanApplication {
+  id: string;
+  taskId: string;
+  wingmanId: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  wingman: { id: string; nickname: string; interests: string[] };
+}
+
 interface WingmanTask {
   id: string;
   title: string;
@@ -21,6 +29,7 @@ interface WingmanTask {
   status: string;
   wingmanId: string | null;
   wingman?: { id: string; nickname: string; avatar: string | null };
+  applications: WingmanApplication[];
 }
 
 interface UserInfo {
@@ -123,9 +132,12 @@ export function WingmanPanel({
   }, [relationshipId, title, description, fetchTasks]);
 
   // Approve a task applicant
-  const handleApprove = useCallback(async (taskId: string) => {
+  const handleApprove = useCallback(async (taskId: string, wingmanId: string) => {
     try {
-      await apiFetch(`/wingman-task/${taskId}/approve`, { method: 'POST' });
+      await apiFetch(`/wingman-task/${taskId}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({ wingmanId }),
+      });
       await fetchTasks();
     } catch (err) {
       console.error('Failed to approve task:', err);
@@ -133,9 +145,12 @@ export function WingmanPanel({
   }, [fetchTasks]);
 
   // Reject a task applicant
-  const handleReject = useCallback(async (taskId: string) => {
+  const handleReject = useCallback(async (taskId: string, wingmanId: string) => {
     try {
-      await apiFetch(`/wingman-task/${taskId}/reject`, { method: 'POST' });
+      await apiFetch(`/wingman-task/${taskId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ wingmanId }),
+      });
       await fetchTasks();
     } catch (err) {
       console.error('Failed to reject task:', err);
@@ -164,13 +179,15 @@ export function WingmanPanel({
   if (wingmanId1) activeWingmen.push({ id: wingmanId1, mode: wingmanMode1 });
   if (wingmanId2) activeWingmen.push({ id: wingmanId2, mode: wingmanMode2 });
 
-  // Tasks with pending applications (status ASSIGNED)
-  const assignedTasks = tasks.filter((t) => t.status === 'ASSIGNED' && t.wingmanId);
+  // Tasks with pending applications (tasks that have PENDING applications)
+  const tasksWithApplicants = tasks.filter(
+    (t) => t.status === 'OPEN' && t.applications?.some((a) => a.status === 'PENDING'),
+  );
 
   // Build a taskId map for active wingmen so we can show "请出"
   const wingmanTaskMap: Record<string, string> = {};
   tasks.forEach((t) => {
-    if (t.wingmanId && (t.status === 'ASSIGNED' || t.status === 'APPROVED')) {
+    if (t.wingmanId && (t.status === 'IN_PROGRESS' || t.status === 'ASSIGNED')) {
       wingmanTaskMap[t.wingmanId] = t.id;
     }
   });
@@ -390,61 +407,83 @@ export function WingmanPanel({
                 )}
 
                 {/* ---- Task Applicants (clients only) ---- */}
-                {!isWingman && assignedTasks.length > 0 && (
+                {!isWingman && tasksWithApplicants.length > 0 && (
                   <Section title="申请中的军师">
-                    {assignedTasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className="py-2"
-                        style={{ borderBottom: '1px solid rgba(140, 160, 255, 0.08)' }}
-                      >
-                        <p className="text-[13px] mb-1" style={{ color: '#3a405a' }}>
-                          <span style={{ fontWeight: 500 }}>
-                            {task.wingman?.nickname ?? '未知用户'}
-                          </span>
-                          {' 申请加入'}
-                        </p>
-                        <p className="text-[12px] mb-2" style={{ color: '#7a829a' }}>
-                          任务：{task.title}
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleApprove(task.id)}
-                            className="flex-1 py-1.5 rounded-lg text-[12px] font-medium transition-all"
-                            style={{
-                              background: '#8ca0ff',
-                              color: '#ffffff',
-                              boxShadow: '0 2px 8px rgba(140, 160, 255, 0.2)',
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.background = '#758cf0';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.background = '#8ca0ff';
-                            }}
-                          >
-                            同意
-                          </button>
-                          <button
-                            onClick={() => handleReject(task.id)}
-                            className="flex-1 py-1.5 rounded-lg text-[12px] font-medium transition-all"
-                            style={{
-                              background: 'rgba(140, 160, 255, 0.08)',
-                              color: '#5a627a',
-                              border: '1px solid rgba(140, 160, 255, 0.15)',
-                            }}
-                            onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.15)';
-                            }}
-                            onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.08)';
-                            }}
-                          >
-                            拒绝
-                          </button>
+                    {tasksWithApplicants.map((task) => {
+                      const pendingApps = task.applications.filter((a) => a.status === 'PENDING');
+                      return (
+                        <div key={task.id} className="mb-3">
+                          <p className="text-[12px] mb-2" style={{ color: '#7a829a' }}>
+                            任务：{task.title} ({pendingApps.length}人申请)
+                          </p>
+                          {pendingApps.map((app) => (
+                            <div
+                              key={app.id}
+                              className="py-2"
+                              style={{ borderBottom: '1px solid rgba(140, 160, 255, 0.08)' }}
+                            >
+                              <p className="text-[13px] mb-1" style={{ color: '#3a405a' }}>
+                                <span style={{ fontWeight: 500 }}>
+                                  {app.wingman?.nickname ?? '未知用户'}
+                                </span>
+                              </p>
+                              {app.wingman?.interests?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  {app.wingman.interests.slice(0, 3).map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="text-[10px] px-1.5 py-0.5 rounded-full"
+                                      style={{
+                                        background: 'rgba(140, 160, 255, 0.08)',
+                                        color: '#8ca0ff',
+                                      }}
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleApprove(task.id, app.wingmanId)}
+                                  className="flex-1 py-1.5 rounded-lg text-[12px] font-medium transition-all"
+                                  style={{
+                                    background: '#8ca0ff',
+                                    color: '#ffffff',
+                                    boxShadow: '0 2px 8px rgba(140, 160, 255, 0.2)',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = '#758cf0';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = '#8ca0ff';
+                                  }}
+                                >
+                                  同意
+                                </button>
+                                <button
+                                  onClick={() => handleReject(task.id, app.wingmanId)}
+                                  className="flex-1 py-1.5 rounded-lg text-[12px] font-medium transition-all"
+                                  style={{
+                                    background: 'rgba(140, 160, 255, 0.08)',
+                                    color: '#5a627a',
+                                    border: '1px solid rgba(140, 160, 255, 0.15)',
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.15)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(140, 160, 255, 0.08)';
+                                  }}
+                                >
+                                  拒绝
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </Section>
                 )}
 

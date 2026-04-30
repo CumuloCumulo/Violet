@@ -1,4 +1,8 @@
-import { Injectable, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -12,7 +16,9 @@ export class AdminGuard extends JwtAuthGuard {
     const isAuthenticated = await super.canActivate(context);
     if (!isAuthenticated) return false;
 
-    const request = context.switchToHttp().getRequest<{ user: { userId: string } }>();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user: { userId: string } }>();
     const userId = request.user?.userId;
     if (!userId) return false;
 

@@ -21,6 +21,7 @@ interface WingmanTask {
   status: 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'CANCELLED';
   wingmanId: string | null;
   createdAt: string;
+  applicationCount?: number;
   client: WingmanTaskClient;
 }
 
@@ -284,6 +285,14 @@ function TaskCard({
 
       {/* Action */}
       <div className="card-action">
+        {!isApplied && (task.applicationCount ?? 0) > 0 && (
+          <span
+            className="text-[11px] px-2 py-1 rounded-full"
+            style={{ background: 'rgba(140,160,255,0.08)', color: '#8ca0ff' }}
+          >
+            {task.applicationCount}人已申请
+          </span>
+        )}
         {client.declaration && (
           <p
             style={{

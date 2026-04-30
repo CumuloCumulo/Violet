@@ -57,16 +57,32 @@ export class DiscoveryService {
       throw new BadRequestException('不能向自己发起牵线');
     }
 
-    // Check for duplicate pending request
-    const existing = await this.prisma.matchRequest.findFirst({
+    // Check for duplicate pending request (either direction)
+    const existingPending = await this.prisma.matchRequest.findFirst({
       where: {
-        fromUserId,
-        toUserId,
         status: 'PENDING',
+        OR: [
+          { fromUserId, toUserId },
+          { fromUserId: toUserId, toUserId: fromUserId },
+        ],
       },
     });
-    if (existing) {
+    if (existingPending) {
       throw new ConflictException('已存在待处理的牵线请求');
+    }
+
+    // Check for existing active relationship between these two users
+    const existingRelationship = await this.prisma.relationship.findFirst({
+      where: {
+        status: { not: 'ENDED' },
+        OR: [
+          { user1Id: fromUserId, user2Id: toUserId },
+          { user1Id: toUserId, user2Id: fromUserId },
+        ],
+      },
+    });
+    if (existingRelationship) {
+      throw new ConflictException('两人之间已存在活跃关系');
     }
 
     // Deduct credit (throws if insufficient)

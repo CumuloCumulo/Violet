@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -6,19 +10,24 @@ export class AdminService {
   constructor(private prisma: PrismaService) {}
 
   async getStats() {
-    const [totalUsers, activeUsers, totalCredit, totalRelationships, pendingMatchRequests] =
-      await Promise.all([
-        this.prisma.user.count({ where: { id: { not: 'system' } } }),
-        this.prisma.user.count({
-          where: { isActive: true, id: { not: 'system' } },
-        }),
-        this.prisma.user.aggregate({
-          _sum: { creditScore: true },
-          where: { id: { not: 'system' } },
-        }),
-        this.prisma.relationship.count(),
-        this.prisma.matchRequest.count({ where: { status: 'PENDING' } }),
-      ]);
+    const [
+      totalUsers,
+      activeUsers,
+      totalCredit,
+      totalRelationships,
+      pendingMatchRequests,
+    ] = await Promise.all([
+      this.prisma.user.count({ where: { id: { not: 'system' } } }),
+      this.prisma.user.count({
+        where: { isActive: true, id: { not: 'system' } },
+      }),
+      this.prisma.user.aggregate({
+        _sum: { creditScore: true },
+        where: { id: { not: 'system' } },
+      }),
+      this.prisma.relationship.count(),
+      this.prisma.matchRequest.count({ where: { status: 'PENDING' } }),
+    ]);
 
     return {
       totalUsers,
@@ -132,7 +141,12 @@ export class AdminService {
     return { ...user, creditLogs };
   }
 
-  async adjustCredit(adminId: string, userId: string, amount: number, reason: string) {
+  async adjustCredit(
+    adminId: string,
+    userId: string,
+    amount: number,
+    reason: string,
+  ) {
     if (!reason || reason.trim().length === 0) {
       throw new BadRequestException('必须填写调整原因');
     }

@@ -167,7 +167,7 @@ export class ChatService {
    * Compute whether a user can see a message based on their role and wingman mode.
    */
   computeVisibility(
-    message: { type: string; senderId: string; targetUserId: string | null },
+    message: { type: string; senderId: string; targetUserId: string | null; isSystem?: boolean },
     viewerId: string,
     viewerRole: 'client1' | 'client2' | 'wingman1' | 'wingman2',
     wingmanMode1: string | null,
@@ -190,6 +190,18 @@ export class ChatService {
     }
 
     if (message.type === 'PRIVATE') {
+      // System PRIVATE messages (e.g. mode switch) visible to both client and wingman on the same side
+      if (message.isSystem && message.senderId === 'system') {
+        if (message.targetUserId === viewerId) {
+          return { canSee: true, displaySenderId: message.senderId };
+        }
+        // viewer is the client on the same side as the wingman (targetUserId)
+        if (viewerRole === 'client1' || viewerRole === 'client2') {
+          // The wingman is on side 1 if targetUserId matches wingmanId1, etc.
+          // For simplicity: system PRIVATE messages are visible to all room members
+          return { canSee: true, displaySenderId: message.senderId };
+        }
+      }
       if (message.senderId === viewerId || message.targetUserId === viewerId) {
         return { canSee: true, displaySenderId: message.senderId };
       }

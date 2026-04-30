@@ -30,6 +30,8 @@ export function ChatPage({
   const switchMode = useChatStore((s) => s.switchMode);
   const rooms = useChatStore((s) => s.rooms);
   const roomClosedReason = useChatStore((s) => s.roomClosedReason);
+  const roomClosedRelId = useChatStore((s) => s.roomClosedRelId);
+  const isReadOnly = useChatStore((s) => s.isReadOnly);
   const flirtingProposal = useChatStore((s) => s.flirtingProposal);
   const transitionStatus = useChatStore((s) => s.transitionStatus);
   const clearFlirtingProposal = useChatStore((s) => s.clearFlirtingProposal);
@@ -119,38 +121,12 @@ export function ChatPage({
     clearFlirtingProposal();
   };
 
-  // Room closed — show flirting / ended overlay
-  if (roomClosedReason === 'FLIRTING') {
-    return (
-      <div className="h-screen flex items-center justify-center p-4 relative">
-        <div className="ambient-bg">
-          <div className="blob blob-1" />
-          <div className="blob blob-2" />
-          <div className="blob blob-3" />
-        </div>
-        <motion.div
-          className="glass-float w-[400px] p-8 text-center space-y-6"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <div className="text-4xl">🎉</div>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: '#c47d8e', fontWeight: 600 }}>
-            恭喜进入暧昧期！
-          </h2>
-          <p className="text-sm" style={{ color: '#5a627a' }}>聊天室已转为只读，军师已退出。</p>
-          <button
-            onClick={onExit}
-            className="w-full h-10 rounded-2xl text-sm font-medium cursor-pointer"
-            style={{ background: '#8ca0ff', color: '#fff', border: 'none', boxShadow: '0 6px 20px rgba(140,160,255,0.3)' }}
-          >
-            返回
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+  // Room closed — exit and show overlay
+  // Only apply roomClosedReason when it belongs to THIS room
+  const isRoomClosed = roomClosedRelId === relationshipId;
 
-  if (roomClosedReason === 'ENDED') {
+  if (isRoomClosed && (roomClosedReason === 'FLIRTING' || roomClosedReason === 'ENDED')) {
+    const isFlirting = roomClosedReason === 'FLIRTING';
     return (
       <div className="h-screen flex items-center justify-center p-4 relative">
         <div className="ambient-bg">
@@ -163,9 +139,15 @@ export function ChatPage({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: '#7a829a', fontWeight: 600 }}>
-            聊天已结束
+          {isFlirting && <div className="text-4xl">🎉</div>}
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: isFlirting ? '#c47d8e' : '#7a829a', fontWeight: 600 }}>
+            {isFlirting ? '恭喜进入暧昧期！' : '聊天已结束'}
           </h2>
+          {isFlirting && (
+            <p className="text-sm" style={{ color: '#5a627a' }}>
+              可在关系列表中查看聊天记录
+            </p>
+          )}
           <button
             onClick={onExit}
             className="w-full h-10 rounded-2xl text-sm font-medium cursor-pointer"
@@ -264,6 +246,8 @@ export function ChatPage({
                   presenceKey={relationshipId}
                   accentColor="violet"
                   draftMode={isWingman && currentWingmanMode === 'ASSIST'}
+                  readOnly={isReadOnly}
+                  placeholder={isWingman ? '输入你想对当事人说的话...' : '输入你想对TA说的话...'}
                 />
               </div>
             )}
@@ -280,6 +264,8 @@ export function ChatPage({
                   targetUserId={effectivePrivateTargetId}
                   myUserId={userId}
                   accentColor="green"
+                  readOnly={isReadOnly}
+                  placeholder={isWingman ? '向当事人发送消息...' : '向军师求助...'}
                 />
               </div>
             )}

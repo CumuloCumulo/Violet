@@ -17,6 +17,6 @@ import { ChatLifecycleService } from './chat-lifecycle.service.js';
     ChatLifecycleService,
   ],
   controllers: [ChatController],
-  exports: [ChatService, RoomService, PresenceService, ChatLifecycleService],
+  exports: [ChatService, RoomService, PresenceService, ChatLifecycleService, ChatGateway],
 })
 export class ChatModule {}

@@ -148,6 +148,11 @@ export function DiscoveryPage() {
     else fetchRelationships();
   }, [tab, fetchUsers, fetchSent, fetchReceived, fetchRelationships]);
 
+  // Always fetch received requests count for the red dot badge
+  useEffect(() => {
+    fetchReceived();
+  }, [fetchReceived]);
+
   const sendMatchRequest = async (toUserId: string) => {
     setConfirmTarget(null);
     setActionError('');

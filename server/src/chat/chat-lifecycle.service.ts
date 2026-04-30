@@ -6,7 +6,7 @@ import { PresenceService } from './presence.service.js';
 import type { RelationshipStatus } from '@prisma/client';
 
 export interface LifecycleEvent {
-  type: 'roomOpened' | 'roomClosed' | 'roomEnded';
+  type: 'roomOpened' | 'roomClosed' | 'roomEnded' | 'roomReadOnly';
   relationshipId: string;
   reason?: string;
   message: string;
@@ -86,7 +86,7 @@ export class ChatLifecycleService {
     );
 
     return {
-      type: 'roomClosed',
+      type: 'roomReadOnly',
       relationshipId,
       reason: 'FLIRTING',
       message: '聊天室已转为只读模式',

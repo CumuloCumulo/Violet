@@ -4,6 +4,7 @@ import {
   Patch,
   Post,
   Body,
+  Param,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -18,6 +19,11 @@ export class UserController {
   @Get('profile')
   async getProfile(@Req() req: any) {
     return this.userService.getProfile(req.user.userId);
+  }
+
+  @Get(':id')
+  async getUserById(@Param('id') id: string) {
+    return this.userService.getPublicProfile(id);
   }
 
   @Patch('profile')

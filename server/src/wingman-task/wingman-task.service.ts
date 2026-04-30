@@ -17,7 +17,6 @@ export class WingmanTaskService {
     title: string,
     description: string,
   ) {
-    // Verify the relationship exists and user is a member
     const relationship = await this.prisma.relationship.findUnique({
       where: { id: relationshipId },
     });
@@ -26,7 +25,10 @@ export class WingmanTaskService {
       throw new NotFoundException('关系不存在');
     }
 
-    if (relationship.user1Id !== clientId && relationship.user2Id !== clientId) {
+    if (
+      relationship.user1Id !== clientId &&
+      relationship.user2Id !== clientId
+    ) {
       throw new ForbiddenException('你不是该关系的当事人');
     }
 
@@ -34,10 +36,8 @@ export class WingmanTaskService {
       throw new BadRequestException('只有在破冰期才能发布军师任务');
     }
 
-    // Determine which side the client is on
     const side = relationship.user1Id === clientId ? 1 : 2;
 
-    // Check for existing OPEN task on the same side
     const existing = await this.prisma.wingmanTask.findFirst({
       where: {
         clientId,
@@ -50,7 +50,6 @@ export class WingmanTaskService {
       throw new ConflictException('已有一条进行中的招募任务');
     }
 
-    // Check if side already has a wingman
     const existingAssignment = await this.prisma.wingmanAssignment.findFirst({
       where: {
         relationshipId,
@@ -75,7 +74,7 @@ export class WingmanTaskService {
   }
 
   async listOpenTasks() {
-    return this.prisma.wingmanTask.findMany({
+    const tasks = await this.prisma.wingmanTask.findMany({
       where: { status: 'OPEN' },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -89,13 +88,22 @@ export class WingmanTaskService {
             declaration: true,
           },
         },
+        applications: {
+          where: { status: 'PENDING' },
+          select: { id: true },
+        },
       },
     });
+
+    return tasks.map((t) => ({
+      ...t,
+      applicationCount: t.applications.length,
+    }));
   }
 
-  async listTasksByRelationship(relationshipId: string) {
+  async listTasksByRelationship(relationshipId: string, clientId: string) {
     return this.prisma.wingmanTask.findMany({
-      where: { relationshipId },
+      where: { relationshipId, clientId },
       orderBy: { createdAt: 'desc' },
       include: {
         client: {
@@ -103,6 +111,14 @@ export class WingmanTaskService {
         },
         wingman: {
           select: { id: true, nickname: true, interests: true },
+        },
+        applications: {
+          include: {
+            wingman: {
+              select: { id: true, nickname: true, interests: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -118,10 +134,9 @@ export class WingmanTaskService {
     }
 
     if (task.status !== 'OPEN') {
-      throw new ConflictException('该任务已被申请');
+      throw new ConflictException('该任务已不可申请');
     }
 
-    // Verify wingman certification
     const wingman = await this.prisma.user.findUnique({
       where: { id: wingmanId },
       select: { wingmanCertStatus: true, roles: true },
@@ -135,13 +150,30 @@ export class WingmanTaskService {
       throw new ForbiddenException('军师认证未通过');
     }
 
-    return this.prisma.wingmanTask.update({
-      where: { id: taskId },
-      data: { status: 'ASSIGNED', wingmanId },
+    // Wingman cannot apply for their own client's task
+    if (task.clientId === wingmanId) {
+      throw new ForbiddenException('不能申请自己发布的任务');
+    }
+
+    // Check duplicate application
+    const existingApp = await this.prisma.wingmanApplication.findUnique({
+      where: { taskId_wingmanId: { taskId, wingmanId } },
+    });
+
+    if (existingApp) {
+      throw new ConflictException('你已经申请过该任务');
+    }
+
+    return this.prisma.wingmanApplication.create({
+      data: {
+        taskId,
+        wingmanId,
+        status: 'PENDING',
+      },
     });
   }
 
-  async approveTask(taskId: string, clientId: string) {
+  async approveTask(taskId: string, clientId: string, wingmanId: string) {
     const task = await this.prisma.wingmanTask.findUnique({
       where: { id: taskId },
     });
@@ -154,13 +186,20 @@ export class WingmanTaskService {
       throw new ForbiddenException('只有发布者才能审批');
     }
 
-    if (task.status !== 'ASSIGNED' || !task.wingmanId) {
-      throw new BadRequestException('该任务没有待审批的申请');
+    if (task.status !== 'OPEN') {
+      throw new BadRequestException('该任务已不可审批');
     }
 
-    // Get relationship to determine side
     if (!task.relationshipId) {
       throw new BadRequestException('任务未关联关系');
+    }
+
+    const application = await this.prisma.wingmanApplication.findUnique({
+      where: { taskId_wingmanId: { taskId, wingmanId } },
+    });
+
+    if (!application || application.status !== 'PENDING') {
+      throw new BadRequestException('该申请不存在或已处理');
     }
 
     const relationship = await this.prisma.relationship.findUnique({
@@ -173,27 +212,48 @@ export class WingmanTaskService {
 
     const side = relationship.user1Id === clientId ? 1 : 2;
 
-    // Create WingmanAssignment and update task in transaction
     return this.prisma.$transaction(async (tx) => {
+      // Approve this application
+      await tx.wingmanApplication.update({
+        where: { id: application.id },
+        data: { status: 'APPROVED' },
+      });
+
+      // Reject all other pending applications
+      await tx.wingmanApplication.updateMany({
+        where: {
+          taskId,
+          status: 'PENDING',
+          id: { not: application.id },
+        },
+        data: { status: 'REJECTED' },
+      });
+
+      // Create WingmanAssignment
       const assignment = await tx.wingmanAssignment.create({
         data: {
           relationshipId: task.relationshipId!,
-          userId: task.wingmanId!,
+          userId: wingmanId,
           side,
           mode: 'PRIVATE',
         },
       });
 
+      // Update task
       const updatedTask = await tx.wingmanTask.update({
         where: { id: taskId },
-        data: { status: 'IN_PROGRESS' },
+        data: { status: 'IN_PROGRESS', wingmanId },
       });
 
       return { task: updatedTask, assignment };
     });
   }
 
-  async rejectTask(taskId: string, clientId: string) {
+  async rejectApplication(
+    taskId: string,
+    clientId: string,
+    wingmanId: string,
+  ) {
     const task = await this.prisma.wingmanTask.findUnique({
       where: { id: taskId },
     });
@@ -206,13 +266,17 @@ export class WingmanTaskService {
       throw new ForbiddenException('只有发布者才能拒绝');
     }
 
-    if (task.status !== 'ASSIGNED') {
-      throw new BadRequestException('该任务没有待审批的申请');
+    const application = await this.prisma.wingmanApplication.findUnique({
+      where: { taskId_wingmanId: { taskId, wingmanId } },
+    });
+
+    if (!application || application.status !== 'PENDING') {
+      throw new BadRequestException('该申请不存在或已处理');
     }
 
-    return this.prisma.wingmanTask.update({
-      where: { id: taskId },
-      data: { status: 'OPEN', wingmanId: null },
+    return this.prisma.wingmanApplication.update({
+      where: { id: application.id },
+      data: { status: 'REJECTED' },
     });
   }
 
@@ -233,7 +297,6 @@ export class WingmanTaskService {
       throw new BadRequestException('任务已取消');
     }
 
-    // If task has an active wingman, remove their assignment
     if (task.wingmanId && task.relationshipId) {
       await this.prisma.wingmanAssignment.updateMany({
         where: {

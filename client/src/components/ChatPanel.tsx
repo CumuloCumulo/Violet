@@ -14,6 +14,10 @@ interface ChatPanelProps {
   accentColor?: 'violet' | 'green';
   /** 军师辅助模式下主聊天走 draftMessage 而非 sendMessage */
   draftMode?: boolean;
+  /** 只读模式：隐藏输入框 */
+  readOnly?: boolean;
+  /** 自定义输入框占位文字 */
+  placeholder?: string;
 }
 
 export function ChatPanel({
@@ -25,6 +29,8 @@ export function ChatPanel({
   presenceKey,
   accentColor = 'violet',
   draftMode = false,
+  readOnly = false,
+  placeholder,
 }: ChatPanelProps) {
   const rawMessages = useChatStore((s) => s.messages[relationshipId]);
   const messages = rawMessages ?? [];
@@ -140,7 +146,16 @@ export function ChatPanel({
       </div>
 
       {/* Input */}
-      <MessageInput onSend={handleSend} accentColor={accentColor} />
+      {readOnly ? (
+        <div
+          className="shrink-0 text-center py-3 text-xs"
+          style={{ color: '#9e98aa', borderTop: '1px solid rgba(255,255,255,0.6)' }}
+        >
+          已进入暧昧期，聊天记录只读
+        </div>
+      ) : (
+        <MessageInput onSend={handleSend} accentColor={accentColor} placeholder={placeholder} />
+      )}
     </div>
   );
 }

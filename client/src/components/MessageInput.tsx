@@ -4,6 +4,7 @@ import { Send, Smile, Keyboard } from 'lucide-react';
 interface MessageInputProps {
   onSend: (content: string) => void;
   accentColor?: 'violet' | 'green';
+  placeholder?: string;
 }
 
 const STORAGE_KEY = 'violet-recent-kaomoji';
@@ -56,7 +57,7 @@ function saveRecent(kaomoji: string) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
-export function MessageInput({ onSend, accentColor = 'violet' }: MessageInputProps) {
+export function MessageInput({ onSend, accentColor = 'violet', placeholder }: MessageInputProps) {
   const [text, setText] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -255,7 +256,7 @@ export function MessageInput({ onSend, accentColor = 'violet' }: MessageInputPro
           onKeyDown={handleKeyDown}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder={isGreen ? '向军师求助...' : '输入你想对TA说的话...'}
+          placeholder={placeholder ?? (isGreen ? '向军师求助...' : '输入你想对TA说的话...')}
           className="flex-1 min-w-0 border-none bg-transparent outline-none text-sm"
           style={{ color: '#3a405a', fontFamily: 'inherit' }}
         />

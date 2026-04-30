@@ -45,6 +45,9 @@ interface ChatState {
   messages: Record<string, ChatMessage[]>;
   userId: string | null;
   roomClosedReason: string | null;
+  roomClosedRelId: string | null;
+  /** Server marked this room as read-only when joining (e.g. FLIRTING) */
+  isReadOnly: boolean;
   flirtingProposal: { relationshipId: string; fromUserId: string } | null;
 
   connect: (userId: string, url?: string) => void;
@@ -72,6 +75,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: {},
   userId: null,
   roomClosedReason: null,
+  roomClosedRelId: null,
+  isReadOnly: false,
   flirtingProposal: null,
 
   connect: (userId: string, url: string = window.location.origin) => {
@@ -91,10 +96,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ connected: false });
     });
 
-    socket.on('roomJoined', (data: { relationshipId: string; messages: ChatMessage[]; role: string; client1Id?: string | null; client2Id?: string | null; wingmanMode1?: string | null; wingmanMode2?: string | null; wingmanId1?: string | null; wingmanId2?: string | null }) => {
+    socket.on('roomJoined', (data: { relationshipId: string; messages: ChatMessage[]; role: string; client1Id?: string | null; client2Id?: string | null; wingmanMode1?: string | null; wingmanMode2?: string | null; wingmanId1?: string | null; wingmanId2?: string | null; readOnly?: boolean }) => {
       set((state) => ({
         activeRoom: data.relationshipId,
         myRole: data.role,
+        // readOnly means user navigated to a FLIRTING room — show read-only chat, NOT overlay
+        isReadOnly: !!data.readOnly,
+        roomClosedReason: state.roomClosedRelId === data.relationshipId ? state.roomClosedReason : null,
+        roomClosedRelId: state.roomClosedRelId === data.relationshipId ? state.roomClosedRelId : null,
         messages: {
           ...state.messages,
           [data.relationshipId]: data.messages,
@@ -196,7 +205,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     socket.on('roomClosed', (data: { relationshipId: string; reason: string; message: string }) => {
-      set({ roomClosedReason: data.reason });
+      set({ roomClosedReason: data.reason, roomClosedRelId: data.relationshipId });
       if (get().activeRoom === data.relationshipId) {
         set({ activeRoom: null, myRole: null });
       }
@@ -210,6 +219,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Confirmation that proposal was sent - handled by UI state
     });
 
+    socket.on('wingmanAssigned', (data: { relationshipId: string; wingmanId: string; side: number; mode: string }) => {
+      set((state) => {
+        const room = state.rooms[data.relationshipId];
+        if (!room) return state;
+
+        const updatedRoom = { ...room };
+        if (data.side === 1) {
+          updatedRoom.wingmanId1 = data.wingmanId;
+          updatedRoom.wingmanMode1 = data.mode;
+        } else {
+          updatedRoom.wingmanId2 = data.wingmanId;
+          updatedRoom.wingmanMode2 = data.mode;
+        }
+
+        return {
+          rooms: {
+            ...state.rooms,
+            [data.relationshipId]: updatedRoom,
+          },
+        };
+      });
+    });
+
+    socket.on('wingmanApproved', (data: { relationshipId: string; side: number; mode: string }) => {
+      // Wingman can now navigate to the chat room
+      console.log(`Wingman approved for relationship ${data.relationshipId}, side ${data.side}, mode ${data.mode}`);
+    });
+
+    socket.on('roomReadOnly', (data: { relationshipId: string; reason: string; message: string }) => {
+      set({ roomClosedReason: data.reason, roomClosedRelId: data.relationshipId });
+    });
+
     set({ socket, userId });
   },
 
@@ -218,7 +259,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (socket) {
       socket.disconnect();
     }
-    set({ socket: null, connected: false, activeRoom: null, myRole: null });
+    set({ socket: null, connected: false, activeRoom: null, myRole: null, isReadOnly: false });
   },
 
   joinRoom: (relationshipId: string) => {
