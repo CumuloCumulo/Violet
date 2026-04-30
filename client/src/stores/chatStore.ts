@@ -28,6 +28,8 @@ export interface RoomMember {
 
 interface RoomState {
   members: RoomMember[];
+  client1Id: string | null;
+  client2Id: string | null;
   wingmanId1: string | null;
   wingmanId2: string | null;
   wingmanMode1: string | null;
@@ -43,6 +45,7 @@ interface ChatState {
   messages: Record<string, ChatMessage[]>;
   userId: string | null;
   roomClosedReason: string | null;
+  flirtingProposal: { relationshipId: string; fromUserId: string } | null;
 
   connect: (userId: string, url?: string) => void;
   disconnect: () => void;
@@ -54,6 +57,9 @@ interface ChatState {
   rejectMessage: (messageId: string, relationshipId: string) => void;
   forwardMessage: (relationshipId: string, originalMessageId: string, targetUserId: string) => void;
   switchMode: (relationshipId: string, wingmanId: string, mode: string) => void;
+  proposeFlirting: (relationshipId: string) => void;
+  transitionStatus: (relationshipId: string, newStatus: string) => void;
+  clearFlirtingProposal: () => void;
   clearRoom: (relationshipId: string) => void;
 }
 
@@ -66,6 +72,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: {},
   userId: null,
   roomClosedReason: null,
+  flirtingProposal: null,
 
   connect: (userId: string, url: string = window.location.origin) => {
     const existingSocket = get().socket;
@@ -84,7 +91,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ connected: false });
     });
 
-    socket.on('roomJoined', (data: { relationshipId: string; messages: ChatMessage[]; role: string; wingmanMode1?: string | null; wingmanMode2?: string | null; wingmanId1?: string | null; wingmanId2?: string | null }) => {
+    socket.on('roomJoined', (data: { relationshipId: string; messages: ChatMessage[]; role: string; client1Id?: string | null; client2Id?: string | null; wingmanMode1?: string | null; wingmanMode2?: string | null; wingmanId1?: string | null; wingmanId2?: string | null }) => {
       set((state) => ({
         activeRoom: data.relationshipId,
         myRole: data.role,
@@ -96,6 +103,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           ...state.rooms,
           [data.relationshipId]: {
             members: state.rooms[data.relationshipId]?.members ?? [],
+            client1Id: data.client1Id ?? null,
+            client2Id: data.client2Id ?? null,
             wingmanId1: data.wingmanId1 ?? null,
             wingmanId2: data.wingmanId2 ?? null,
             wingmanMode1: data.wingmanMode1 ?? null,
@@ -193,6 +202,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     });
 
+    socket.on('proposeFlirting', (data: { relationshipId: string; fromUserId: string }) => {
+      set({ flirtingProposal: { relationshipId: data.relationshipId, fromUserId: data.fromUserId } });
+    });
+
+    socket.on('proposeFlirtingSent', () => {
+      // Confirmation that proposal was sent - handled by UI state
+    });
+
     set({ socket, userId });
   },
 
@@ -256,6 +273,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { socket } = get();
     if (!socket) return;
     socket.emit('switchMode', { relationshipId, wingmanId, mode });
+  },
+
+  proposeFlirting: (relationshipId: string) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('proposeFlirting', { relationshipId });
+  },
+
+  transitionStatus: (relationshipId: string, newStatus: string) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('transitionStatus', { relationshipId, newStatus });
+  },
+
+  clearFlirtingProposal: () => {
+    set({ flirtingProposal: null });
   },
 
   clearRoom: (relationshipId: string) => {

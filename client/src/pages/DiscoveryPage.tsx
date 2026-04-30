@@ -25,7 +25,49 @@ interface MatchRequestWithUser {
   toUser?: DiscoverUser;
 }
 
-type Tab = 'discover' | 'sent' | 'received';
+interface RelationshipInfo {
+  id: string;
+  status: string;
+  role: 'client' | 'wingman';
+  createdAt: string;
+  // 当事人视角
+  otherUser?: {
+    id: string;
+    nickname: string;
+    gender: string | null;
+    campus: string | null;
+    grade: string | null;
+    interests: string[];
+    declaration: string | null;
+    wechat: string | null;
+    qq: string | null;
+  };
+  myWingman?: { id: string; nickname: string; mode: string } | null;
+  otherWingman?: { id: string; nickname: string; mode: string } | null;
+  // 军师视角
+  wingmanSide?: number;
+  wingmanMode?: string;
+  client1?: {
+    id: string;
+    nickname: string;
+    gender: string | null;
+    campus: string | null;
+    grade: string | null;
+    interests: string[];
+    declaration: string | null;
+  };
+  client2?: {
+    id: string;
+    nickname: string;
+    gender: string | null;
+    campus: string | null;
+    grade: string | null;
+    interests: string[];
+    declaration: string | null;
+  };
+}
+
+type Tab = 'discover' | 'sent' | 'received' | 'relationships';
 
 const AURA_GRADIENTS = [
   'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
@@ -64,6 +106,7 @@ export function DiscoveryPage() {
   const [users, setUsers] = useState<DiscoverUser[]>([]);
   const [sentRequests, setSentRequests] = useState<MatchRequestWithUser[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<MatchRequestWithUser[]>([]);
+  const [relationships, setRelationships] = useState<RelationshipInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [confirmTarget, setConfirmTarget] = useState<DiscoverUser | null>(null);
@@ -91,11 +134,19 @@ export function DiscoveryPage() {
     } catch {}
   }, []);
 
+  const fetchRelationships = useCallback(async () => {
+    try {
+      const res = await apiFetch<RelationshipInfo[]>('/discovery/relationships');
+      setRelationships(res);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (tab === 'discover') fetchUsers();
     else if (tab === 'sent') fetchSent();
-    else fetchReceived();
-  }, [tab, fetchUsers, fetchSent, fetchReceived]);
+    else if (tab === 'received') fetchReceived();
+    else fetchRelationships();
+  }, [tab, fetchUsers, fetchSent, fetchReceived, fetchRelationships]);
 
   const sendMatchRequest = async (toUserId: string) => {
     setConfirmTarget(null);
@@ -138,7 +189,7 @@ export function DiscoveryPage() {
     }
   };
 
-  const tabLabels: Record<Tab, string> = { discover: '发现', sent: '已发起', received: '收到心动' };
+  const tabLabels: Record<Tab, string> = { discover: '发现', sent: '已发起', received: '收到心动', relationships: '关系' };
 
   return (
     <div className="min-h-screen relative" style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem' }}>
@@ -149,6 +200,15 @@ export function DiscoveryPage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs" style={{ color: '#7a829a' }}>{user?.creditScore ?? 0} 分</span>
+          {user?.roles.includes('WINGMAN') && (
+            <button
+              onClick={() => setPage('wingman-hall')}
+              className="text-xs px-3 py-1.5 rounded-full transition-all"
+              style={{ background: 'rgba(140,160,255,0.12)', color: '#6b82f0', border: '1px solid rgba(140,160,255,0.3)' }}
+            >
+              军师大厅
+            </button>
+          )}
           {user?.roles.includes('ADMIN') && (
             <button
               onClick={() => setPage('admin')}
@@ -185,7 +245,7 @@ export function DiscoveryPage() {
             border: '1px solid rgba(255,255,255,0.6)',
           }}
         >
-          {(['discover', 'sent', 'received'] as Tab[]).map((t) => (
+          {(['discover', 'sent', 'received', 'relationships'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -295,6 +355,37 @@ export function DiscoveryPage() {
                   index={i}
                   onAccept={() => acceptRequest(r.id)}
                   onReject={() => rejectRequest(r.id)}
+                />
+              ))
+            )}
+          </motion.div>
+        )}
+
+        {tab === 'relationships' && (
+          <motion.div
+            key="relationships"
+            className="grid gap-6 pb-16"
+            style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {relationships.length === 0 ? (
+              <p className="text-sm text-center py-12 col-span-full" style={{ color: '#9e98aa' }}>暂无进行中的关系</p>
+            ) : (
+              relationships.map((rel, i) => (
+                <RelationshipCard
+                  key={rel.id}
+                  relationship={rel}
+                  index={i}
+                  onEnter={() => {
+                    connect(user!.id);
+                    setTimeout(() => {
+                      joinRoom(rel.id);
+                      enterChat(rel.id);
+                    }, 300);
+                  }}
                 />
               ))
             )}
@@ -530,6 +621,145 @@ function ReceivedSoulCard({ request, index, onAccept, onReject }: {
           style={{ background: '#8ca0ff', color: '#fff', border: 'none', boxShadow: '0 6px 20px rgba(140,160,255,0.3)' }}
         >
           接受心动
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Relationship Card ──────────────────────────────────────
+
+function RelationshipCard({ relationship, index, onEnter }: {
+  relationship: RelationshipInfo;
+  index: number;
+  onEnter: () => void;
+}) {
+  const { status, role } = relationship;
+
+  const statusLabel: Record<string, { text: string; color: string }> = {
+    ICEBREAKING: { text: '破冰中', color: '#8ca0ff' },
+    FLIRTING: { text: '暧昧期', color: '#c47d8e' },
+    MATCHING: { text: '牵线中', color: '#c4a35a' },
+  };
+  const info = statusLabel[status] ?? { text: status, color: '#9e98aa' };
+
+  if (role === 'wingman') {
+    // 军师视角：显示双方当事人
+    const c1 = relationship.client1!;
+    const c2 = relationship.client2!;
+    return (
+      <motion.div
+        className="soul-card"
+        style={{ cursor: 'default' }}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.1 + index * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
+      >
+        <div className="aura" style={{ background: getAuraGradient(relationship.id) }} />
+
+        <div className="card-meta">
+          <span
+            className="text-xs px-2.5 py-1 rounded-full"
+            style={{ background: 'rgba(212,237,164,0.35)', color: '#5a7332', border: '1px solid rgba(212,237,164,0.6)' }}
+          >
+            军师身份
+          </span>
+          <span className="info-text">
+            {relationship.wingmanMode === 'SOLO' ? '代聊' : relationship.wingmanMode === 'PRIVATE' ? '私聊' : '辅助'}模式
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 my-3">
+          <div className="flex-1 text-center">
+            <p className="text-sm font-medium truncate" style={{ color: '#3a405a' }}>{c1.nickname}</p>
+            <p className="text-[10px]" style={{ color: '#9e98aa' }}>
+              {c1.gender === 'male' ? '男' : c1.gender === 'female' ? '女' : ''}
+              {c1.campus ? ` · ${c1.campus}` : ''}
+            </p>
+          </div>
+          <span className="text-xs" style={{ color: '#8ca0ff' }}>&harr;</span>
+          <div className="flex-1 text-center">
+            <p className="text-sm font-medium truncate" style={{ color: '#3a405a' }}>{c2.nickname}</p>
+            <p className="text-[10px]" style={{ color: '#9e98aa' }}>
+              {c2.gender === 'male' ? '男' : c2.gender === 'female' ? '女' : ''}
+              {c2.campus ? ` · ${c2.campus}` : ''}
+            </p>
+          </div>
+        </div>
+
+        <div className="card-action">
+          <span className="text-xs font-medium" style={{ color: info.color }}>{info.text}</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onEnter(); }}
+            className="connect-btn"
+          >
+            进入聊天
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // 当事人视角
+  const otherUser = relationship.otherUser!;
+  const myWingman = relationship.myWingman;
+
+  return (
+    <motion.div
+      className="soul-card"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.1 + index * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
+    >
+      <div className="aura" style={{ background: getAuraGradient(otherUser.id) }} />
+
+      <div className="card-meta">
+        <span
+          className="gender-tag"
+          style={{
+            background: otherUser.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)',
+            color: otherUser.gender === 'male' ? '#6b82f0' : '#c47d8e',
+          }}
+        >
+          {otherUser.gender === 'male' ? '男' : otherUser.gender === 'female' ? '女' : '?'}
+        </span>
+        <span className="info-text">
+          {otherUser.campus}{otherUser.campus && otherUser.grade ? ' · ' : ''}{otherUser.grade}
+        </span>
+      </div>
+
+      <p className="card-quote">
+        {otherUser.declaration ? `"${otherUser.declaration}"` : '"..."'}
+      </p>
+
+      {otherUser.interests.length > 0 && (
+        <div className="tags-wrapper">
+          {otherUser.interests.slice(0, 5).map((tag) => (
+            <span key={tag} className="hobby-tag">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      <div className="card-action">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium" style={{ color: info.color }}>{info.text}</span>
+          {myWingman && (
+            <span className="text-[10px]" style={{ color: '#5a7332' }}>
+              军师: {myWingman.nickname} ({myWingman.mode})
+            </span>
+          )}
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onEnter(); }}
+          className="connect-btn"
+        >
+          {status === 'FLIRTING' ? '查看' : '进入聊天'}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M5 12h14M12 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
     </motion.div>

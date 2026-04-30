@@ -7,6 +7,7 @@ import { UserModule } from './user/user.module.js';
 import { CreditModule } from './credit/credit.module.js';
 import { DiscoveryModule } from './discovery/discovery.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { WingmanTaskModule } from './wingman-task/wingman-task.module.js';
 import { DevModule } from './dev/dev.module.js';
 
 const devImports = process.env['NODE_ENV'] !== 'production' ? [DevModule] : [];
@@ -19,6 +20,7 @@ const devImports = process.env['NODE_ENV'] !== 'production' ? [DevModule] : [];
     DiscoveryModule,
     ChatModule,
     AdminModule,
+    WingmanTaskModule,
     ...devImports,
   ],
   controllers: [AppController],

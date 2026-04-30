@@ -21,7 +21,7 @@ export interface AuthUser {
   updatedAt: string;
 }
 
-type AppPage = 'login' | 'register' | 'profile-setup' | 'discovery' | 'chat' | 'profile' | 'admin';
+type AppPage = 'login' | 'register' | 'profile-setup' | 'discovery' | 'chat' | 'profile' | 'admin' | 'wingman-hall';
 
 interface AuthState {
   user: AuthUser | null;

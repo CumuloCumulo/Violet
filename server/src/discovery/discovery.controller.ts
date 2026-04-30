@@ -29,6 +29,11 @@ export class DiscoveryController {
     );
   }
 
+  @Get('relationships')
+  async listRelationships(@Req() req: any) {
+    return this.discoveryService.listRelationships(req.user.userId);
+  }
+
   @Post('match-request')
   async sendMatchRequest(@Req() req: any, @Body() body: { toUserId: string }) {
     return this.discoveryService.sendMatchRequest(

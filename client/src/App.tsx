@@ -7,6 +7,7 @@ import { ProfileSetupPage } from './pages/ProfileSetupPage';
 import { DiscoveryPage } from './pages/DiscoveryPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { WingmanHallPage } from './pages/WingmanHallPage';
 import { useAuthStore } from './stores/authStore';
 import { useDevData, type DevUser, type DevRelationship } from './hooks/useDevData';
 
@@ -114,6 +115,7 @@ function DevApp() {
     if (page === 'profile-setup') return <ProfileSetupPage />;
     if (page === 'profile') return <ProfilePage />;
     if (page === 'admin') return <AdminDashboardPage />;
+    if (page === 'wingman-hall') return <WingmanHallPage />;
     if (page === 'discovery') return <DiscoveryPage />;
   }
 
@@ -325,6 +327,7 @@ function ProdApp() {
   if (page === 'profile-setup') return <ProfileSetupPage />;
   if (page === 'profile') return <ProfilePage />;
   if (page === 'admin' && user?.roles.includes('ADMIN')) return <AdminDashboardPage />;
+  if (page === 'wingman-hall') return <WingmanHallPage />;
   if (page === 'discovery' && user) return <DiscoveryPage />;
 
   return <LoginPage />;

@@ -8,6 +8,9 @@ async function main() {
   // Clean existing data
   await prisma.message.deleteMany();
   await prisma.wingmanAssignment.deleteMany();
+  await prisma.wingmanTask.deleteMany();
+  await prisma.checkinRecord.deleteMany();
+  await prisma.creditLog.deleteMany();
   await prisma.relationship.deleteMany();
   await prisma.matchRequest.deleteMany();
   await prisma.user.deleteMany();
@@ -220,6 +223,47 @@ async function main() {
     },
   });
 
+  // Create WingmanTask sample data
+  // Task 1: OPEN - a client seeking wingman help for their ICEBREAKING relationship
+  await prisma.wingmanTask.create({
+    data: {
+      id: 'test_wingman_task_1',
+      clientId: client1.id,
+      relationshipId: relationship.id,
+      title: '破冰助攻：帮我找话题和对方聊下去',
+      description:
+        '我和小红刚匹配上，正在破冰阶段，但我们共同的兴趣是天文观测，希望能有军师帮我设计一些有趣的话题，让聊天自然地进行下去。',
+      status: 'OPEN',
+    },
+  });
+
+  // Task 2: ASSIGNED - a wingman has applied and been assigned but not yet started
+  await prisma.wingmanTask.create({
+    data: {
+      id: 'test_wingman_task_2',
+      clientId: client3.id,
+      title: '帮忙分析对方朋友圈，制定搭话策略',
+      description:
+        '我对小雨有好感，但不确定怎么自然地开始对话。想请一位军师帮我分析一下怎么从共同话题（摄影）切入，制定一个自然的搭话计划。',
+      status: 'ASSIGNED',
+      wingmanId: wingman1.id,
+    },
+  });
+
+  // Task 3: IN_PROGRESS - a wingman has been approved and is actively helping
+  await prisma.wingmanTask.create({
+    data: {
+      id: 'test_wingman_task_3',
+      clientId: client2.id,
+      relationshipId: relationship.id,
+      title: '约会建议：第一次线下见面怎么安排',
+      description:
+        '我和小明聊了一段时间，感觉还不错。想请军师帮我参考一下第一次线下见面可以去哪里、怎么安排，最好是仙林校区附近的地方。',
+      status: 'IN_PROGRESS',
+      wingmanId: wingman2.id,
+    },
+  });
+
   console.log('✅ Seed data created:\n');
   console.log('  用户:');
   console.log(`    当事人1: ${client1.nickname} (id: ${client1.id})`);
@@ -239,6 +283,11 @@ async function main() {
   console.log(`    ${client3.nickname} → ${client4.nickname}: PENDING`);
   console.log();
   console.log('  消息: 6条已创建 (4 MAIN + 1 PRIVATE + 1 PENDING + 1 SYSTEM)');
+  console.log();
+  console.log('  军师任务:');
+  console.log(`    [OPEN] ${client1.nickname}: 破冰助攻 (关系: ${relationship.id})`);
+  console.log(`    [ASSIGNED] ${client3.nickname}: 搭话策略 (军师: ${wingman1.nickname})`);
+  console.log(`    [IN_PROGRESS] ${client2.nickname}: 约会建议 (军师: ${wingman2.nickname}, 关系: ${relationship.id})`);
 }
 
 main()

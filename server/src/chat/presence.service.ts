@@ -75,4 +75,30 @@ export class PresenceService implements OnModuleDestroy {
     const presence = await this.getPresence(userId);
     return presence?.socketId ?? null;
   }
+
+  /**
+   * Store a pending flirting proposal for an offline user.
+   * Key: flirting-pending:<userId> → JSON { relationshipId, fromUserId }
+   * TTL: 7 days
+   */
+  async storePendingProposal(userId: string, relationshipId: string, fromUserId: string): Promise<void> {
+    const key = `flirting-pending:${userId}:${relationshipId}`;
+    await this.redis.set(key, JSON.stringify({ relationshipId, fromUserId }), 'EX', 7 * 24 * 3600);
+  }
+
+  async getPendingProposals(userId: string): Promise<Array<{ relationshipId: string; fromUserId: string }>> {
+    const pattern = `flirting-pending:${userId}:*`;
+    const keys = await this.redis.keys(pattern);
+    if (keys.length === 0) return [];
+
+    const values = await this.redis.mget(...keys);
+    return values
+      .filter((v): v is string => v !== null)
+      .map((v) => JSON.parse(v));
+  }
+
+  async removePendingProposal(userId: string, relationshipId: string): Promise<void> {
+    const key = `flirting-pending:${userId}:${relationshipId}`;
+    await this.redis.del(key);
+  }
 }

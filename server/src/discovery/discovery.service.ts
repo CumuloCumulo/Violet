@@ -146,6 +146,112 @@ export class DiscoveryService {
     return requests;
   }
 
+  async listRelationships(userId: string) {
+    // 1. 当事人视角：user1 或 user2
+    const asClient = await this.prisma.relationship.findMany({
+      where: {
+        status: { not: 'ENDED' },
+        OR: [{ user1Id: userId }, { user2Id: userId }],
+      },
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        user1: {
+          select: {
+            id: true, nickname: true, gender: true, campus: true,
+            grade: true, interests: true, declaration: true, wechat: true, qq: true,
+          },
+        },
+        user2: {
+          select: {
+            id: true, nickname: true, gender: true, campus: true,
+            grade: true, interests: true, declaration: true, wechat: true, qq: true,
+          },
+        },
+        wingmen: {
+          where: { leftAt: null },
+          include: {
+            user: { select: { id: true, nickname: true, interests: true } },
+          },
+        },
+      },
+    });
+
+    // 2. 军师视角：通过 WingmanAssignment
+    const asWingman = await this.prisma.wingmanAssignment.findMany({
+      where: { userId, leftAt: null },
+      include: {
+        relationship: {
+          include: {
+            user1: {
+              select: {
+                id: true, nickname: true, gender: true, campus: true,
+                grade: true, interests: true, declaration: true, wechat: true, qq: true,
+              },
+            },
+            user2: {
+              select: {
+                id: true, nickname: true, gender: true, campus: true,
+                grade: true, interests: true, declaration: true, wechat: true, qq: true,
+              },
+            },
+            wingmen: {
+              where: { leftAt: null },
+              include: {
+                user: { select: { id: true, nickname: true, interests: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const seenIds = new Set<string>();
+    const results: any[] = [];
+
+    // 当事人关系
+    for (const rel of asClient) {
+      seenIds.add(rel.id);
+      const isUser1 = rel.user1Id === userId;
+      const otherUser = isUser1 ? rel.user2 : rel.user1;
+      const mySide = isUser1 ? 1 : 2;
+      const myWingman = rel.wingmen.find((w) => w.side === mySide);
+      const otherWingman = rel.wingmen.find((w) => w.side !== mySide);
+
+      results.push({
+        id: rel.id,
+        status: rel.status,
+        role: 'client' as const,
+        createdAt: rel.createdAt,
+        otherUser,
+        myWingman: myWingman
+          ? { id: myWingman.user.id, nickname: myWingman.user.nickname, mode: myWingman.mode }
+          : null,
+        otherWingman: otherWingman
+          ? { id: otherWingman.user.id, nickname: otherWingman.user.nickname, mode: otherWingman.mode }
+          : null,
+      });
+    }
+
+    // 军师关系（排除已作为当事人的）
+    for (const wa of asWingman) {
+      const rel = wa.relationship;
+      if (seenIds.has(rel.id)) continue;
+      results.push({
+        id: rel.id,
+        status: rel.status,
+        role: 'wingman' as const,
+        createdAt: rel.createdAt,
+        wingmanSide: wa.side,
+        wingmanMode: wa.mode,
+        // 军师能看到双方当事人
+        client1: rel.user1,
+        client2: rel.user2,
+      });
+    }
+
+    return results;
+  }
+
   async acceptMatchRequest(requestId: string, userId: string) {
     const request = await this.prisma.matchRequest.findUnique({
       where: { id: requestId },

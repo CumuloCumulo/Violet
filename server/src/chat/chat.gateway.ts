@@ -146,10 +146,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return vis.canSee;
     });
 
+    const relationship = await this.chatService.findRelationshipById(relationshipId);
+
     client.emit('roomJoined', {
       relationshipId,
       messages: visibleMessages,
       role: member.role,
+      client1Id: relationship?.user1Id ?? null,
+      client2Id: relationship?.user2Id ?? null,
       wingmanMode1,
       wingmanMode2,
       wingmanId1,
@@ -160,6 +164,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       userId,
       role: member.role,
     });
+
+    // Check for pending flirting proposals and push to this user
+    const pendingProposals = await this.presenceService.getPendingProposals(userId);
+    for (const proposal of pendingProposals) {
+      // Only push if it's for this room
+      if (proposal.relationshipId === relationshipId) {
+        client.emit('proposeFlirting', {
+          relationshipId: proposal.relationshipId,
+          fromUserId: proposal.fromUserId,
+        });
+      }
+    }
   }
 
   @SubscribeMessage('sendMessage')
@@ -426,6 +442,57 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const roomId = this.roomService.getRoomId(relationshipId);
     this.server.to(roomId).emit('newMessage', sysMsg);
     this.server.to(roomId).emit('modeSwitched', { wingmanId, mode });
+  }
+
+  @SubscribeMessage('proposeFlirting')
+  async handleProposeFlirting(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { relationshipId: string },
+  ) {
+    const { relationshipId } = data;
+    const userId = client.data.userId;
+
+    const relationship = await this.chatService.findRelationshipById(relationshipId);
+    if (!relationship) {
+      client.emit('error', { code: 'NOT_FOUND', message: 'Relationship not found' });
+      return;
+    }
+
+    // Only clients (not wingmen) can propose
+    const member = await this.roomService.validateMembership(relationshipId, userId);
+    if (!member || member.role.startsWith('wingman')) {
+      client.emit('error', { code: 'FORBIDDEN', message: 'Only clients can propose flirting' });
+      return;
+    }
+
+    if (relationship.status !== 'ICEBREAKING') {
+      client.emit('error', { code: 'FORBIDDEN', message: 'Can only propose flirting during ICEBREAKING' });
+      return;
+    }
+
+    // Determine the other client
+    const otherClientId = relationship.user1Id === userId ? relationship.user2Id : relationship.user1Id;
+
+    const roomId = this.roomService.getRoomId(relationshipId);
+
+    // Try to find the other client's socket in the room
+    const sockets = await this.server.in(roomId).fetchSockets();
+    const otherSocket = sockets.find(
+      (s) => (s as any).data?.userId === otherClientId,
+    );
+
+    if (otherSocket) {
+      // Other client is online — send directly
+      this.server.to(otherSocket.id).emit('proposeFlirting', {
+        relationshipId,
+        fromUserId: userId,
+      });
+    } else {
+      // Other client is offline — store pending proposal in Redis via presence service
+      await this.presenceService.storePendingProposal(otherClientId, relationshipId, userId);
+    }
+
+    client.emit('proposeFlirtingSent', { relationshipId });
   }
 
   @SubscribeMessage('transitionStatus')

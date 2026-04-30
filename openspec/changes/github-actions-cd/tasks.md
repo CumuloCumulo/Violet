@@ -23,7 +23,7 @@
 
 ## 4. 测试与验证
 
-- [ ] 4.1 提交 workflow 文件并 push 到 main，观察 GitHub Actions 运行结果
-- [ ] 4.2 确认 CI 通过后 deploy workflow 自动触发
-- [ ] 4.3 确认部署成功，浏览器访问 `http://121.43.69.144` 显示新版本
-- [ ] 4.4 确认 API 正常，`curl http://121.43.69.144/api/` 返回 200
+- [x] 4.1 提交 workflow 文件并 push 到 main，观察 GitHub Actions 运行结果
+- [x] 4.2 确认 CI 通过后 deploy workflow 自动触发
+- [x] 4.3 确认部署成功，浏览器访问 `http://121.43.69.144` 显示新版本
+- [x] 4.4 确认 API 正常，`curl http://121.43.69.144/api/` 返回 200

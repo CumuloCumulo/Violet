@@ -134,9 +134,10 @@ model Relationship {
 
   user1      User               @relation("User1Relationships", fields: [user1Id], references: [id])
   user2      User               @relation("User2Relationships", fields: [user2Id], references: [id])
-  wingmen    WingmanAssignment[]
-  messages   Message[]
-  ratings    Rating[]
+  wingmen      WingmanAssignment[]
+  wingmanTasks WingmanTask[]
+  messages     Message[]
+  ratings      Rating[]
 
   @@unique([user1Id, user2Id])
 }
@@ -159,17 +160,19 @@ model WingmanAssignment {
 
 // ==================== 军师任务（大厅） ====================
 model WingmanTask {
-  id          String     @id @default(cuid())
-  clientId    String                      // 当事人ID
-  title       String                      // 任务标题
-  description String                      // 任务描述
-  status      TaskStatus @default(OPEN)
-  wingmanId   String?                     // 接单军师ID
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id             String       @id @default(cuid())
+  clientId       String                        // 当事人ID
+  relationshipId String?                       // 关联的关系ID
+  title          String                        // 任务标题
+  description    String                        // 任务描述
+  status         TaskStatus   @default(OPEN)
+  wingmanId      String?                       // 接单军师ID
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  client      User       @relation("ClientTasks", fields: [clientId], references: [id])
-  wingman     User?      @relation("WingmanTasks", fields: [wingmanId], references: [id])
+  client         User         @relation("ClientTasks", fields: [clientId], references: [id])
+  wingman        User?        @relation("WingmanTasks", fields: [wingmanId], references: [id])
+  relationship   Relationship? @relation(fields: [relationshipId], references: [id])
 }
 
 // ==================== 消息 ====================
