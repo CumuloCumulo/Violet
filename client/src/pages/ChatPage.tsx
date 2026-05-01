@@ -277,6 +277,7 @@ export function ChatPage({
               relationshipId={relationshipId}
               userId={userId}
               isWingman={false}
+              myRole={myRole ?? undefined}
               wingmanId1={room?.wingmanId1 ?? null}
               wingmanId2={room?.wingmanId2 ?? null}
               wingmanMode1={room?.wingmanMode1 ?? null}
