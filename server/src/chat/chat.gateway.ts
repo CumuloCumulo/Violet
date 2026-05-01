@@ -99,17 +99,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { relationshipId } = data;
     const userId = client.data.userId;
 
-    const member = await this.roomService.validateMembership(
-      relationshipId,
-      userId,
-    );
+    const [member, relationship] = await Promise.all([
+      this.roomService.validateMembership(relationshipId, userId),
+      this.chatService.findRelationshipById(relationshipId),
+    ]);
     if (!member) {
       client.emit('error', { code: 'FORBIDDEN', message: 'Not a room member' });
       return;
     }
-
-    const relationship =
-      await this.chatService.findRelationshipById(relationshipId);
     if (!relationship) {
       client.emit('error', { code: 'NOT_FOUND', message: 'Relationship not found' });
       return;
@@ -138,10 +135,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
     }
 
-    const messages = await this.chatService.getMessages(relationshipId, userId);
+    const [messages, wingmanModes] = await Promise.all([
+      this.chatService.getMessages(relationshipId, userId),
+      this.roomService.getWingmanModes(relationshipId),
+    ]);
 
-    const { wingmanMode1, wingmanMode2, wingmanId1, wingmanId2 } =
-      await this.roomService.getWingmanModes(relationshipId);
+    const { wingmanMode1, wingmanMode2, wingmanId1, wingmanId2 } = wingmanModes;
 
     const visibleMessages = messages.filter((msg) => {
       const vis = this.chatService.computeVisibility(

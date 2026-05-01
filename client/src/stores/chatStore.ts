@@ -102,8 +102,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         myRole: data.role,
         // readOnly means user navigated to a FLIRTING room — show read-only chat, NOT overlay
         isReadOnly: !!data.readOnly,
-        roomClosedReason: state.roomClosedRelId === data.relationshipId ? state.roomClosedReason : null,
-        roomClosedRelId: state.roomClosedRelId === data.relationshipId ? state.roomClosedRelId : null,
+        // Always clear room closed state on join — readOnly flag handles read-only mode.
+        // The overlay should only appear during real-time roomReadOnly events, not when re-visiting.
+        roomClosedReason: null,
+        roomClosedRelId: null,
         messages: {
           ...state.messages,
           [data.relationshipId]: data.messages,

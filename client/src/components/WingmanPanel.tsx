@@ -7,6 +7,7 @@ interface WingmanPanelProps {
   relationshipId: string;
   userId: string;
   isWingman: boolean;
+  myRole?: string;
   wingmanId1: string | null;
   wingmanId2: string | null;
   wingmanMode1: string | null;
@@ -48,6 +49,7 @@ export function WingmanPanel({
   relationshipId,
   userId: _userId,
   isWingman,
+  myRole,
   wingmanId1,
   wingmanId2,
   wingmanMode1,
@@ -174,14 +176,22 @@ export function WingmanPanel({
     setFlirtingPending(true);
   }, [socket, relationshipId]);
 
-  // Active wingmen from props
+  // Active wingmen from props — only show the user's own wingman
   const activeWingmen: { id: string; mode: string | null }[] = [];
-  if (wingmanId1) activeWingmen.push({ id: wingmanId1, mode: wingmanMode1 });
-  if (wingmanId2) activeWingmen.push({ id: wingmanId2, mode: wingmanMode2 });
+  if (myRole === 'client1' && wingmanId1) {
+    activeWingmen.push({ id: wingmanId1, mode: wingmanMode1 });
+  } else if (myRole === 'client2' && wingmanId2) {
+    activeWingmen.push({ id: wingmanId2, mode: wingmanMode2 });
+  }
 
   // Tasks with pending applications (tasks that have PENDING applications)
   const tasksWithApplicants = tasks.filter(
     (t) => t.status === 'OPEN' && t.applications?.some((a) => a.status === 'PENDING'),
+  );
+
+  // Whether current user already has an active task (OPEN, ASSIGNED, or IN_PROGRESS)
+  const hasActiveTask = tasks.some(
+    (t) => t.status === 'OPEN' || t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS',
   );
 
   // Published tasks waiting for applicants (OPEN with no pending applications yet)
@@ -343,8 +353,8 @@ export function WingmanPanel({
                   </div>
                 )}
 
-                {/* ---- Publish Task Form (clients only) ---- */}
-                {!isWingman && (
+                {/* ---- Publish Task Form (clients only, only if no active task) ---- */}
+                {!isWingman && !hasActiveTask && (
                   <Section title="发布任务">
                     <div className="flex flex-col gap-3">
                       <input

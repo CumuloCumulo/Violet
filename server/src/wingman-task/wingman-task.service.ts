@@ -229,15 +229,28 @@ export class WingmanTaskService {
         data: { status: 'REJECTED' },
       });
 
-      // Create WingmanAssignment
-      const assignment = await tx.wingmanAssignment.create({
-        data: {
-          relationshipId: task.relationshipId!,
-          userId: wingmanId,
-          side,
-          mode: 'PRIVATE',
-        },
+      // Create or reactivate WingmanAssignment
+      // If a previous assignment for this side exists (leftAt set), reactivate it
+      const existingAssignment = await tx.wingmanAssignment.findUnique({
+        where: { relationshipId_side: { relationshipId: task.relationshipId!, side } },
       });
+
+      let assignment;
+      if (existingAssignment) {
+        assignment = await tx.wingmanAssignment.update({
+          where: { id: existingAssignment.id },
+          data: { userId: wingmanId, mode: 'PRIVATE', leftAt: null, joinedAt: new Date() },
+        });
+      } else {
+        assignment = await tx.wingmanAssignment.create({
+          data: {
+            relationshipId: task.relationshipId!,
+            userId: wingmanId,
+            side,
+            mode: 'PRIVATE',
+          },
+        });
+      }
 
       // Update task
       const updatedTask = await tx.wingmanTask.update({
