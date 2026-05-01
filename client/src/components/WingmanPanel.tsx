@@ -184,6 +184,11 @@ export function WingmanPanel({
     (t) => t.status === 'OPEN' && t.applications?.some((a) => a.status === 'PENDING'),
   );
 
+  // Published tasks waiting for applicants (OPEN with no pending applications yet)
+  const openTasksNoApplicants = tasks.filter(
+    (t) => t.status === 'OPEN' && !t.applications?.some((a) => a.status === 'PENDING'),
+  );
+
   // Build a taskId map for active wingmen so we can show "请出"
   const wingmanTaskMap: Record<string, string> = {};
   tasks.forEach((t) => {
@@ -403,6 +408,54 @@ export function WingmanPanel({
                         {submitting ? '发布中...' : '发布军师任务'}
                       </button>
                     </div>
+                  </Section>
+                )}
+
+                {/* ---- Published tasks waiting for applicants (clients only) ---- */}
+                {!isWingman && openTasksNoApplicants.length > 0 && (
+                  <Section title="已发布的任务">
+                    {openTasksNoApplicants.map((task) => (
+                      <div
+                        key={task.id}
+                        className="mb-3 p-3 rounded-xl"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.5)',
+                          border: '1px solid rgba(140, 160, 255, 0.15)',
+                        }}
+                      >
+                        <p className="text-[13px] mb-1" style={{ color: '#3a405a', fontWeight: 500 }}>
+                          {task.title}
+                        </p>
+                        <p className="text-[12px] mb-2" style={{ color: '#7a829a', lineHeight: 1.5 }}>
+                          {task.description}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <span
+                            className="text-[11px] px-2 py-0.5 rounded-full"
+                            style={{ background: 'rgba(140, 160, 255, 0.1)', color: '#8ca0ff' }}
+                          >
+                            等待军师申请中...
+                          </span>
+                          <button
+                            onClick={() => handleCancel(task.id)}
+                            className="text-[11px] px-2.5 py-1 rounded-lg transition-all"
+                            style={{
+                              background: 'rgba(196, 125, 142, 0.08)',
+                              color: '#c47d8e',
+                              border: '1px solid rgba(196, 125, 142, 0.15)',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196, 125, 142, 0.18)';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(196, 125, 142, 0.08)';
+                            }}
+                          >
+                            取消任务
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </Section>
                 )}
 
