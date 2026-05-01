@@ -54,7 +54,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--color-ink);
-  background: #f4f6ff;
+  background: #fdfdfd;
+  overflow-x: hidden;
 }
 
 /* -------------------------------------
@@ -65,8 +66,8 @@ body {
   top: 0; left: 0; width: 100vw; height: 100vh;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.05;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
 /* -------------------------------------
@@ -75,41 +76,50 @@ body {
 .ambient-bg {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
-  z-index: -1;
+  z-index: -2;
   overflow: hidden;
-  background: #f4f6ff;
+  pointer-events: none;
 }
 
 .blob {
   position: absolute;
   border-radius: 50%;
   filter: blur(90px);
-  opacity: 0.7;
-  animation: blob-float 15s infinite alternate ease-in-out;
+  will-change: transform;
 }
 
 .blob-1 {
-  top: -10%; left: -10%; width: 50vw; height: 50vw;
-  background: #b5c0ff;
-  animation-delay: 0s;
+  width: 50vmax; height: 50vmax;
+  background: var(--color-violet-light, #d6e0ff);
+  top: -15%; left: -10%;
+  opacity: 0.55;
+  animation: drift1 18s cubic-bezier(0.2, 0.8, 0.2, 1) infinite alternate;
 }
 
 .blob-2 {
-  bottom: -20%; right: -10%; width: 60vw; height: 60vw;
-  background: var(--color-violet-main);
-  animation-delay: -5s;
+  width: 45vmax; height: 45vmax;
+  background: var(--color-violet-main, #8ca0ff);
+  bottom: -20%; right: -10%;
+  opacity: 0.35;
+  animation: drift2 22s cubic-bezier(0.2, 0.8, 0.2, 1) infinite alternate;
 }
 
 .blob-3 {
-  top: 30%; left: 40%; width: 40vw; height: 40vw;
-  background: var(--color-spring-green);
-  animation-delay: -10s;
-  opacity: 0.4;
+  width: 35vmax; height: 35vmax;
+  background: var(--color-spring-green, #d4eda4);
+  bottom: 10%; left: 30%;
+  opacity: 0.2;
+  animation: drift3 25s cubic-bezier(0.2, 0.8, 0.2, 1) infinite alternate;
 }
 
-@keyframes blob-float {
-  0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.1) translate(30px, 30px); }
+@keyframes drift1 {
+  to { transform: translate(8vw, 6vh) scale(1.08); }
+}
+@keyframes drift2 {
+  to { transform: translate(-10vw, -8vh) scale(1.12); }
+}
+@keyframes drift3 {
+  to { transform: translate(6vw, -10vh) scale(0.92); }
 }
 
 /* -------------------------------------
@@ -183,182 +193,7 @@ input::placeholder {
   background: rgba(140, 160, 255, 0.35);
 }
 
-/* -------------------------------------
-   Discovery Page - Soul Cards
-------------------------------------- */
-.soul-card {
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 24px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  min-height: 260px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.soul-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(140, 160, 255, 0.15),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.6);
-}
-
-/* Aura circle */
-.soul-card .aura {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  margin-bottom: 20px;
-  opacity: 0.85;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
-/* Card meta bar */
-.card-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.gender-tag {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 500;
-}
-
-.info-text {
-  font-size: 13px;
-  color: #7a829a;
-}
-
-/* Quote / declaration */
-.card-quote {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  line-height: 1.4;
-  color: #3a405a;
-  margin-bottom: auto;
-  padding-bottom: 20px;
-  font-style: italic;
-  font-weight: 600;
-}
-
-/* Tags wrapper */
-.tags-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 20px;
-}
-
-.hobby-tag {
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  color: #5a627a;
-  font-weight: 500;
-}
-
-/* Card action area */
-.card-action {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.4);
-  padding-top: 16px;
-}
-
-.status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: #d4eda4;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  background: #d4eda4;
-  border-radius: 50%;
-  box-shadow: 0 0 6px #d4eda4;
-}
-
-/* Connect button */
-.connect-btn {
-  background: transparent;
-  border: none;
-  color: #8ca0ff;
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-  opacity: 0.6;
-}
-
-.soul-card:hover .connect-btn {
-  opacity: 1;
-  transform: translateX(4px);
-}
-
-/* Mystery card variant */
-.mystery-card {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px dashed rgba(255, 255, 255, 0.5);
-  cursor: default;
-}
-
-.mystery-card:hover {
-  transform: none;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.mystery-quote {
-  color: #a1a9c3;
-}
-
-.mystery-tags {
-  opacity: 0.5;
-}
-
-.mystery-tag-blur {
-  filter: blur(2px);
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-  color: #9e98aa;
-}
-
-.mystery-label {
-  font-size: 11px;
-  color: #a1a9c3;
-}
-
-/* Received card actions */
-.card-action button {
-  flex: 1;
-}
-
-/* Card-action as flex with gap for received cards */
-.card-action:has(button) {
-  gap: 12px;
-}
+/* Discovery Page styles moved to discovery-gallery.css */
 
 /* -------------------------------------
    Profile Setup Page
