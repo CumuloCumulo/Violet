@@ -6,8 +6,12 @@ import {
   Body,
   Param,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 
@@ -41,6 +45,27 @@ export class UserController {
     },
   ) {
     return this.userService.updateProfile(req.user.userId, body);
+  }
+
+  @Post('avatar')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      limits: { fileSize: 2 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          cb(new BadRequestException('只能上传图片文件'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('请选择图片文件');
+    }
+    const avatarPath = `/uploads/avatars/${file.filename}`;
+    return this.userService.updateAvatar(req.user.userId, avatarPath);
   }
 
   @Post('wingman-certify')

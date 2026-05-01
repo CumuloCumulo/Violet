@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
 import { apiFetch } from '../lib/api';
+import { getFallbackGradient, extractAuraGradient } from '../lib/aura-colors';
 
 interface DiscoverUser {
   id: string;
@@ -13,6 +14,7 @@ interface DiscoverUser {
   declaration: string | null;
   isActive: boolean;
   lastActiveAt: string;
+  avatar: string | null;
 }
 
 interface MatchRequestWithUser {
@@ -41,6 +43,7 @@ interface RelationshipInfo {
     declaration: string | null;
     wechat: string | null;
     qq: string | null;
+    avatar: string | null;
   };
   myWingman?: { id: string; nickname: string; mode: string } | null;
   otherWingman?: { id: string; nickname: string; mode: string } | null;
@@ -55,6 +58,7 @@ interface RelationshipInfo {
     grade: string | null;
     interests: string[];
     declaration: string | null;
+    avatar: string | null;
   };
   client2?: {
     id: string;
@@ -64,25 +68,11 @@ interface RelationshipInfo {
     grade: string | null;
     interests: string[];
     declaration: string | null;
+    avatar: string | null;
   };
 }
 
 type Tab = 'discover' | 'sent' | 'received' | 'relationships';
-
-const AURA_GRADIENTS = [
-  'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
-  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-  'linear-gradient(135deg, #d4eda4 0%, #a1c4fd 100%)',
-  'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)',
-  'linear-gradient(135deg, #a1c4fd 0%, #d4eda4 100%)',
-  'linear-gradient(135deg, #fecfef 0%, #ff9a9e 100%)',
-];
-
-function getAuraGradient(id: string): string {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
-  return AURA_GRADIENTS[Math.abs(hash) % AURA_GRADIENTS.length];
-}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -92,6 +82,28 @@ function timeAgo(dateStr: string): string {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}小时前`;
   return '1天前';
+}
+
+// ─── Aura Circle (dynamic color from avatar) ──────────────
+
+function AuraCircle({ userId, avatarUrl }: { userId: string; avatarUrl?: string | null }) {
+  const [gradient, setGradient] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!avatarUrl) return;
+    let cancelled = false;
+    extractAuraGradient(avatarUrl).then((g) => {
+      if (!cancelled && g) setGradient(g);
+    });
+    return () => { cancelled = true; };
+  }, [avatarUrl]);
+
+  return (
+    <div
+      className="aura"
+      style={{ background: gradient ?? getFallbackGradient(userId) }}
+    />
+  );
 }
 
 export function DiscoveryPage() {
@@ -468,10 +480,7 @@ function SoulCard({ user, index, status, onSend }: {
       transition={{ duration: 0.6, delay: 0.1 + index * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
     >
       {/* Aura */}
-      <div
-        className="aura"
-        style={{ background: getAuraGradient(user.id) }}
-      />
+      <AuraCircle userId={user.id} avatarUrl={user.avatar} />
 
       {/* Meta */}
       <div className="card-meta">
@@ -539,7 +548,7 @@ function MysteryCard() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
     >
-      <div className="aura" style={{ background: '#e2e6f3', filter: 'blur(10px)' }} />
+      <div className="aura" style={{ background: '#e2e6f3' }} />
       <div className="card-meta">
         <span className="gender-tag" style={{ background: 'rgba(255,255,255,0.5)', color: '#7a829a' }}>未知</span>
       </div>
@@ -579,7 +588,7 @@ function ReceivedSoulCard({ request, index, onAccept, onReject }: {
       transition={{ duration: 0.6, delay: 0.1 + index * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
     >
       {/* Aura */}
-      <div className="aura" style={{ background: getAuraGradient(u.id) }} />
+      <AuraCircle userId={u.id} avatarUrl={u.avatar} />
 
       {/* Meta */}
       <div className="card-meta">
@@ -660,7 +669,7 @@ function RelationshipCard({ relationship, index, onEnter }: {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 + index * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
       >
-        <div className="aura" style={{ background: getAuraGradient(relationship.id) }} />
+        <AuraCircle userId={relationship.id} />
 
         <div className="card-meta">
           <span
@@ -719,7 +728,7 @@ function RelationshipCard({ relationship, index, onEnter }: {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.1 + index * 0.08, ease: [0.2, 0.8, 0.2, 1] }}
     >
-      <div className="aura" style={{ background: getAuraGradient(otherUser.id) }} />
+      <AuraCircle userId={otherUser.id} avatarUrl={otherUser.avatar} />
 
       <div className="card-meta">
         <span

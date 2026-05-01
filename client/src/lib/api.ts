@@ -26,3 +26,26 @@ export async function apiFetch<T = any>(
 
   return res.json();
 }
+
+export async function apiUpload<T = any>(
+  path: string,
+  formData: FormData,
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    throw new Error('未登录或登录已过期');
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ message: '上传失败' }));
+    throw new Error(body.message ?? `上传失败 (${res.status})`);
+  }
+
+  return res.json();
+}

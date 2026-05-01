@@ -5,12 +5,34 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { validateInterests } from './interest-tags.js';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
+
+  async updateAvatar(userId: string, avatarPath: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar: true },
+    });
+
+    // Delete old avatar file if exists
+    if (user?.avatar) {
+      const oldFilePath = path.join(process.cwd(), '..', user.avatar);
+      await fs.unlink(oldFilePath).catch(() => {});
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatarPath },
+    });
+    const { password: _, ...result } = updatedUser;
+    return result;
+  }
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
