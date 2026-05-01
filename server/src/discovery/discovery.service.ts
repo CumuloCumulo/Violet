@@ -39,6 +39,7 @@ export class DiscoveryService {
           declaration: true,
           isActive: true,
           lastActiveAt: true,
+          avatar: true,
         },
       }),
       this.prisma.user.count({
@@ -118,6 +119,7 @@ export class DiscoveryService {
             grade: true,
             interests: true,
             declaration: true,
+            avatar: true,
           },
         },
       },
@@ -154,6 +156,7 @@ export class DiscoveryService {
             grade: true,
             interests: true,
             declaration: true,
+            avatar: true,
           },
         },
       },
@@ -182,6 +185,7 @@ export class DiscoveryService {
             declaration: true,
             wechat: true,
             qq: true,
+            avatar: true,
           },
         },
         user2: {
@@ -195,6 +199,7 @@ export class DiscoveryService {
             declaration: true,
             wechat: true,
             qq: true,
+            avatar: true,
           },
         },
         wingmen: {
@@ -223,6 +228,7 @@ export class DiscoveryService {
                 declaration: true,
                 wechat: true,
                 qq: true,
+                avatar: true,
               },
             },
             user2: {
@@ -236,6 +242,7 @@ export class DiscoveryService {
                 declaration: true,
                 wechat: true,
                 qq: true,
+                avatar: true,
               },
             },
             wingmen: {

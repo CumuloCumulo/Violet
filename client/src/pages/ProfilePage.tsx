@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
-import { apiFetch } from '../lib/api';
+import { apiFetch, apiUpload } from '../lib/api';
 import { TAG_CATEGORIES, MAX_INTEREST_TAGS } from '../lib/tags';
 
 export function ProfilePage() {
@@ -21,6 +21,46 @@ export function ProfilePage() {
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinResult, setCheckinResult] = useState<{ balance: number; reward: number } | null>(null);
   const [tagShake, setTagShake] = useState(false);
+
+  // Avatar upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarError('');
+
+    // Client-side validation
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('请选择图片文件');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('图片大小不能超过 2MB');
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const updated = await apiUpload<any>('/user/avatar', formData);
+      useAuthStore.setState({ user: { ...user, ...updated } as any });
+    } catch (err: any) {
+      setAvatarError(err.message ?? '上传失败');
+    } finally {
+      setAvatarUploading(false);
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Account security state
   const [securityOpen, setSecurityOpen] = useState(false);
@@ -163,6 +203,39 @@ export function ProfilePage() {
         <div className="profile-canvas-body">
         {/* Left: Editable Info */}
         <div className="profile-section-left">
+          {/* Avatar Upload */}
+          <div className="avatar-preview" onClick={handleAvatarClick}>
+            {user?.avatar ? (
+              <img src={user.avatar} alt="avatar" className="avatar-img" />
+            ) : (
+              <div className="avatar-placeholder">
+                {(user?.nickname ?? '?')[0].toUpperCase()}
+              </div>
+            )}
+            <div className="avatar-overlay">
+              {avatarUploading ? (
+                <svg className="avatar-spinner" viewBox="0 0 24 24" width="24" height="24">
+                  <circle cx="12" cy="12" r="10" fill="none" stroke="white" strokeWidth="2" strokeDasharray="31.4" strokeLinecap="round">
+                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              style={{ display: 'none' }}
+            />
+          </div>
+          {avatarError && <p className="profile-error" style={{ textAlign: 'center', marginBottom: 12 }}>{avatarError}</p>}
+
           {/* Gender */}
           <div className="profile-form-group">
             <label className="profile-form-label">性别</label>
