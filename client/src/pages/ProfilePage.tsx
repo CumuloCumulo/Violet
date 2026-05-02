@@ -25,6 +25,11 @@ export function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
+  // Card image upload state
+  const cardInputRef = useRef<HTMLInputElement>(null);
+  const [cardUploading, setCardUploading] = useState(false);
+  const [cardError, setCardError] = useState('');
+
   // Debounced auto-save for profile fields
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -138,6 +143,44 @@ export function ProfilePage() {
       setAvatarUploading(false);
       // Reset input so same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCardImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCardError('');
+
+    if (!file.type.startsWith('image/')) {
+      setCardError('请选择图片文件');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setCardError('图片大小不能超过 5MB');
+      return;
+    }
+
+    setCardUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('cardImage', file);
+      const updated = await apiUpload<any>('/user/card-image', formData);
+      useAuthStore.setState({ user: { ...user, ...updated } as any });
+    } catch (err: any) {
+      setCardError(err.message ?? '上传失败');
+    } finally {
+      setCardUploading(false);
+      if (cardInputRef.current) cardInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteCardImage = async () => {
+    try {
+      const updated = await apiFetch<any>('/user/card-image', { method: 'DELETE' });
+      useAuthStore.setState({ user: { ...user, ...updated } as any });
+    } catch (err: any) {
+      setCardError(err.message ?? '删除失败');
     }
   };
 
@@ -377,6 +420,42 @@ export function ProfilePage() {
               placeholder="写下你的期许..."
               className="profile-quote-textarea"
             />
+          </div>
+
+          {/* Card Image Upload */}
+          <div className="profile-form-group">
+            <label className="profile-form-label">个性卡片</label>
+            <div className="profile-card-image-section">
+              {user?.cardImage ? (
+                <div className="profile-card-image-preview">
+                  <img src={user.cardImage} alt="card" className="profile-card-image-img" />
+                  <div className="profile-card-image-actions">
+                    <button onClick={() => cardInputRef.current?.click()} className="profile-card-image-btn" disabled={cardUploading}>
+                      {cardUploading ? '上传中...' : '更换'}
+                    </button>
+                    <button onClick={handleDeleteCardImage} className="profile-card-image-btn delete">
+                      删除
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="profile-card-image-upload" onClick={() => cardInputRef.current?.click()}>
+                  {cardUploading ? (
+                    <span>上传中...</span>
+                  ) : (
+                    <span>+ 上传个性卡片</span>
+                  )}
+                </div>
+              )}
+              <input
+                ref={cardInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCardImageChange}
+                style={{ display: 'none' }}
+              />
+            </div>
+            {cardError && <p className="profile-error">{cardError}</p>}
           </div>
         </div>
 

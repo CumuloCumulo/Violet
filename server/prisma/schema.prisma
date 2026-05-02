@@ -89,6 +89,7 @@ model User {
   major        String?                   // 专业
   interests    String[]                  // 兴趣标签
   declaration  String?                   // 恋爱宣言
+  cardImage    String?                   // 个性卡片图片
   creditScore  Int      @default(0)     // 信用分
   isActive     Boolean  @default(true)  // 是否活跃
   lastActiveAt DateTime @default(now()) // 最后活跃时间

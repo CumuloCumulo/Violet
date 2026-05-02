@@ -512,6 +512,23 @@
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(1px);
 }
+/* Card image mode: feather edges into background, center stays sharp */
+.dg .soul-card-aura-bg.card-image-mode {
+  -webkit-mask-image: radial-gradient(
+    ellipse 70% 65% at center,
+    black 50%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 70% 65% at center,
+    black 50%,
+    transparent 100%
+  );
+}
+.dg .soul-card-aura-bg.card-image-mode + .soul-card-aura-glass {
+  background: none;
+  backdrop-filter: none;
+}
 .dg .soul-card-aura .gender-icon {
   position: relative;
   z-index: 1;

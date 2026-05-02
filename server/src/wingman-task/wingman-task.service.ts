@@ -6,6 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class WingmanTaskService {
@@ -212,54 +213,64 @@ export class WingmanTaskService {
 
     const side = relationship.user1Id === clientId ? 1 : 2;
 
-    return this.prisma.$transaction(async (tx) => {
-      // Approve this application
-      await tx.wingmanApplication.update({
-        where: { id: application.id },
-        data: { status: 'APPROVED' },
-      });
-
-      // Reject all other pending applications
-      await tx.wingmanApplication.updateMany({
-        where: {
-          taskId,
-          status: 'PENDING',
-          id: { not: application.id },
-        },
-        data: { status: 'REJECTED' },
-      });
-
-      // Create or reactivate WingmanAssignment
-      // If a previous assignment for this side exists (leftAt set), reactivate it
-      const existingAssignment = await tx.wingmanAssignment.findUnique({
-        where: { relationshipId_side: { relationshipId: task.relationshipId!, side } },
-      });
-
-      let assignment;
-      if (existingAssignment) {
-        assignment = await tx.wingmanAssignment.update({
-          where: { id: existingAssignment.id },
-          data: { userId: wingmanId, mode: 'PRIVATE', leftAt: null, joinedAt: new Date() },
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // Approve this application
+        await tx.wingmanApplication.update({
+          where: { id: application.id },
+          data: { status: 'APPROVED' },
         });
-      } else {
-        assignment = await tx.wingmanAssignment.create({
-          data: {
-            relationshipId: task.relationshipId!,
-            userId: wingmanId,
-            side,
-            mode: 'PRIVATE',
+
+        // Reject all other pending applications
+        await tx.wingmanApplication.updateMany({
+          where: {
+            taskId,
+            status: 'PENDING',
+            id: { not: application.id },
           },
+          data: { status: 'REJECTED' },
         });
-      }
 
-      // Update task
-      const updatedTask = await tx.wingmanTask.update({
-        where: { id: taskId },
-        data: { status: 'IN_PROGRESS', wingmanId },
+        // Create or reactivate WingmanAssignment
+        // If a previous assignment for this side exists (leftAt set), reactivate it
+        const existingAssignment = await tx.wingmanAssignment.findUnique({
+          where: { relationshipId_side: { relationshipId: task.relationshipId!, side } },
+        });
+
+        let assignment;
+        if (existingAssignment) {
+          assignment = await tx.wingmanAssignment.update({
+            where: { id: existingAssignment.id },
+            data: { userId: wingmanId, mode: 'PRIVATE', leftAt: null, joinedAt: new Date() },
+          });
+        } else {
+          assignment = await tx.wingmanAssignment.create({
+            data: {
+              relationshipId: task.relationshipId!,
+              userId: wingmanId,
+              side,
+              mode: 'PRIVATE',
+            },
+          });
+        }
+
+        // Update task
+        const updatedTask = await tx.wingmanTask.update({
+          where: { id: taskId },
+          data: { status: 'IN_PROGRESS', wingmanId },
+        });
+
+        return { task: updatedTask, assignment };
       });
-
-      return { task: updatedTask, assignment };
-    });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('该侧已有军师，无法重复分配');
+      }
+      throw error;
+    }
   }
 
   async rejectApplication(
