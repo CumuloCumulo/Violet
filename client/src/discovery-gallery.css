@@ -515,13 +515,13 @@
 /* Card image mode: feather edges into background, center stays sharp */
 .dg .soul-card-aura-bg.card-image-mode {
   -webkit-mask-image: radial-gradient(
-    ellipse 70% 65% at center,
-    black 50%,
+    ellipse 55% 50% at center,
+    black 40%,
     transparent 100%
   );
   mask-image: radial-gradient(
-    ellipse 70% 65% at center,
-    black 50%,
+    ellipse 55% 50% at center,
+    black 40%,
     transparent 100%
   );
 }
