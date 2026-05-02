@@ -13,6 +13,7 @@ export interface AuthUser {
   major: string | null;
   interests: string[];
   declaration: string | null;
+  cardImage: string | null;
   creditScore: number;
   roles: string[];
   wingmanCertStatus: string;

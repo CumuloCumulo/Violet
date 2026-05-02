@@ -40,6 +40,7 @@ export class DiscoveryService {
           isActive: true,
           lastActiveAt: true,
           avatar: true,
+          cardImage: true,
         },
       }),
       this.prisma.user.count({

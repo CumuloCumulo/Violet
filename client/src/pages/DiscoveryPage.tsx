@@ -21,6 +21,7 @@ interface DiscoverUser {
   isActive: boolean;
   lastActiveAt: string;
   avatar: string | null;
+  cardImage: string | null;
 }
 
 interface MatchRequestWithUser {
@@ -641,8 +642,14 @@ export function DiscoveryPage() {
                             style={{ '--ti': TI_CYCLE[i % TI_CYCLE.length], '--cd': (i * 0.3 % 2).toFixed(1) } as React.CSSProperties}
                             onClick={() => setConfirmTarget(u)}
                           >
-                            <div className="soul-card-aura" style={{ '--aura': `linear-gradient(135deg,${g0},${g1})` } as React.CSSProperties}>
-                              <div className="soul-card-aura-bg" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
+                            <div className="soul-card-aura" style={{ '--aura': u.cardImage ? `url(${u.cardImage})` : `linear-gradient(135deg,${g0},${g1})` } as React.CSSProperties}>
+                              <div
+                                className={`soul-card-aura-bg${u.cardImage ? ' card-image-mode' : ''}`}
+                                style={u.cardImage
+                                  ? { backgroundImage: `url(${u.cardImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                                  : { background: `linear-gradient(135deg,${g0},${g1})` }
+                                }
+                              />
                               <div className="soul-card-aura-glass" />
                               <span className="gender-icon">{u.gender === 'female' ? '♀' : u.gender === 'male' ? '♂' : '?'}</span>
                             </div>

@@ -34,6 +34,44 @@ export class UserService {
     return result;
   }
 
+  async updateCardImage(userId: string, cardImagePath: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { cardImage: true },
+    });
+
+    if (user?.cardImage) {
+      const oldFilePath = path.join(process.cwd(), '..', user.cardImage);
+      await fs.unlink(oldFilePath).catch(() => {});
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { cardImage: cardImagePath },
+    });
+    const { password: _, ...result } = updatedUser;
+    return result;
+  }
+
+  async deleteCardImage(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { cardImage: true },
+    });
+
+    if (user?.cardImage) {
+      const oldFilePath = path.join(process.cwd(), '..', user.cardImage);
+      await fs.unlink(oldFilePath).catch(() => {});
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { cardImage: null },
+    });
+    const { password: _, ...result } = updatedUser;
+    return result;
+  }
+
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) return null;
