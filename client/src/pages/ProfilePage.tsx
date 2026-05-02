@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { apiFetch, apiUpload } from '../lib/api';
@@ -16,8 +16,6 @@ export function ProfilePage() {
   const [major, setMajor] = useState(user?.major ?? '');
   const [declaration, setDeclaration] = useState(user?.declaration ?? '');
   const [selectedTags, setSelectedTags] = useState<string[]>(user?.interests ?? []);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinResult, setCheckinResult] = useState<{ balance: number; reward: number } | null>(null);
   const [tagShake, setTagShake] = useState(false);
@@ -27,8 +25,89 @@ export function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
+  // Debounced auto-save for profile fields
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const autoSaveProfile = (updates: Partial<any>) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        await updateProfile(updates as any);
+      } catch (e: any) {
+        console.error('自动保存失败:', e.message);
+      }
+    }, 800);
+  };
+
+  const handleGenderChange = (g: string) => {
+    setGender(g);
+    autoSaveProfile({ gender: g });
+  };
+
+  const handleCampusChange = (v: string) => {
+    setCampus(v);
+    autoSaveProfile({ campus: v });
+  };
+
+  const handleGradeChange = (v: string) => {
+    setGrade(v);
+    autoSaveProfile({ grade: v });
+  };
+
+  const handleMajorChange = (v: string) => {
+    setMajor(v);
+    autoSaveProfile({ major: v });
+  };
+
+  const handleDeclarationChange = (v: string) => {
+    setDeclaration(v);
+    autoSaveProfile({ declaration: v });
+  };
+
+  // Modal state
+  const [nicknameModal, setNicknameModal] = useState(false);
+  const [declarationModal, setDeclarationModal] = useState(false);
+  const [editNickname, setEditNickname] = useState(user?.nickname ?? '');
+  const [editDeclaration, setEditDeclaration] = useState(user?.declaration ?? '');
+  const [nicknameSaving, setNicknameSaving] = useState(false);
+  const [declarationSaving, setDeclarationSaving] = useState(false);
+
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const openNicknameModal = () => {
+    setEditNickname(user?.nickname ?? '');
+    setNicknameModal(true);
+  };
+
+  const openDeclarationModal = () => {
+    setEditDeclaration(user?.declaration ?? '');
+    setDeclarationModal(true);
+  };
+
+  const handleSaveNickname = async () => {
+    setNicknameSaving(true);
+    try {
+      await updateProfile({ nickname: editNickname || undefined } as any);
+      setNicknameModal(false);
+    } catch (e: any) {
+      setAvatarError(e.message ?? '保存失败');
+    } finally {
+      setNicknameSaving(false);
+    }
+  };
+
+  const handleSaveDeclaration = async () => {
+    setDeclarationSaving(true);
+    try {
+      await updateProfile({ declaration: editDeclaration || undefined } as any);
+      setDeclarationModal(false);
+    } catch (e: any) {
+      setAvatarError(e.message ?? '保存失败');
+    } finally {
+      setDeclarationSaving(false);
+    }
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,6 +143,8 @@ export function ProfilePage() {
 
   // Account security state
   const [securityOpen, setSecurityOpen] = useState(false);
+  const securityContentRef = useRef<HTMLDivElement>(null);
+  const [securityHeight, setSecurityHeight] = useState(0);
   const [contactEmail, setContactEmail] = useState(user?.contactEmail ?? '');
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailMsg, setEmailMsg] = useState('');
@@ -85,24 +166,17 @@ export function ProfilePage() {
     });
   };
 
-  const handleSave = async () => {
-    setSubmitting(true);
-    setError('');
-    try {
-      await updateProfile({
-        gender: gender || undefined,
-        campus: campus || undefined,
-        grade: grade || undefined,
-        major: major || undefined,
-        declaration: declaration || undefined,
-        interests: selectedTags,
-      } as any);
-    } catch (e: any) {
-      setError(e.message ?? '保存失败');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Auto-save tags when changed
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        await updateProfile({ interests: selectedTags } as any);
+      } catch (e: any) {
+        console.error('标签保存失败:', e.message);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [selectedTags]);
 
   const handleCheckin = async () => {
     setCheckinLoading(true);
@@ -112,7 +186,7 @@ export function ProfilePage() {
       // Refresh user data
       await updateProfile({} as any);
     } catch (e: any) {
-      setError(e.message ?? '签到失败');
+      console.error('签到失败:', e.message);
     } finally {
       setCheckinLoading(false);
     }
@@ -203,36 +277,42 @@ export function ProfilePage() {
         <div className="profile-canvas-body">
         {/* Left: Editable Info */}
         <div className="profile-section-left">
-          {/* Avatar Upload */}
-          <div className="avatar-preview" onClick={handleAvatarClick}>
-            {user?.avatar ? (
-              <img src={user.avatar} alt="avatar" className="avatar-img" />
-            ) : (
-              <div className="avatar-placeholder">
-                {(user?.nickname ?? '?')[0].toUpperCase()}
-              </div>
-            )}
-            <div className="avatar-overlay">
-              {avatarUploading ? (
-                <svg className="avatar-spinner" viewBox="0 0 24 24" width="24" height="24">
-                  <circle cx="12" cy="12" r="10" fill="none" stroke="white" strokeWidth="2" strokeDasharray="31.4" strokeLinecap="round">
-                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
-                  </circle>
-                </svg>
+          {/* Avatar Upload & User Info */}
+          <div className="profile-user-header">
+            <div className="avatar-preview" onClick={handleAvatarClick}>
+              {user?.avatar ? (
+                <img src={user.avatar} alt="avatar" className="avatar-img" />
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
+                <div className="avatar-placeholder">
+                  {(user?.nickname ?? '?')[0].toUpperCase()}
+                </div>
               )}
+              <div className="avatar-overlay">
+                {avatarUploading ? (
+                  <svg className="avatar-spinner" viewBox="0 0 24 24" width="24" height="24">
+                    <circle cx="12" cy="12" r="10" fill="none" stroke="white" strokeWidth="2" strokeDasharray="31.4" strokeLinecap="round">
+                      <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                    </circle>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                style={{ display: 'none' }}
+              />
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              style={{ display: 'none' }}
-            />
+            <div className="profile-user-info">
+              <div className="profile-user-name" onClick={openNicknameModal}>{user?.nickname || '未设置昵称'}</div>
+              <div className="profile-user-declaration" onClick={openDeclarationModal}>{user?.declaration || '写下你的恋爱宣言...'}</div>
+            </div>
           </div>
           {avatarError && <p className="profile-error" style={{ textAlign: 'center', marginBottom: 12 }}>{avatarError}</p>}
 
@@ -243,7 +323,7 @@ export function ProfilePage() {
               {(['male', 'female'] as const).map((g) => (
                 <button
                   key={g}
-                  onClick={() => setGender(g)}
+                  onClick={() => handleGenderChange(g)}
                   className={`profile-pill ${gender === g ? 'active' : ''}`}
                 >
                   {g === 'male' ? '男生' : '女生'}
@@ -258,7 +338,7 @@ export function ProfilePage() {
             <input
               type="text"
               value={campus}
-              onChange={(e) => setCampus(e.target.value)}
+              onChange={(e) => handleCampusChange(e.target.value)}
               placeholder="例如：仙林校区"
               className="profile-minimal-input"
             />
@@ -271,7 +351,7 @@ export function ProfilePage() {
               <input
                 type="text"
                 value={grade}
-                onChange={(e) => setGrade(e.target.value)}
+                onChange={(e) => handleGradeChange(e.target.value)}
                 placeholder="例如：大二"
                 className="profile-minimal-input"
               />
@@ -281,7 +361,7 @@ export function ProfilePage() {
               <input
                 type="text"
                 value={major}
-                onChange={(e) => setMajor(e.target.value)}
+                onChange={(e) => handleMajorChange(e.target.value)}
                 placeholder="例如：软件工程"
                 className="profile-minimal-input"
               />
@@ -293,24 +373,149 @@ export function ProfilePage() {
             <label className="profile-form-label">恋爱宣言</label>
             <textarea
               value={declaration}
-              onChange={(e) => setDeclaration(e.target.value)}
+              onChange={(e) => handleDeclarationChange(e.target.value)}
               placeholder="写下你的期许..."
               className="profile-quote-textarea"
             />
+          </div>
+        </div>
+
+        {/* Middle: Interest Tags */}
+        <div className="profile-section-middle">
+          <div className="profile-tag-header">
+            <label style={{ fontSize: 14, color: '#3a405a', fontWeight: 500 }}>兴趣标签</label>
+            <div
+              className={`profile-tag-count ${tagShake ? 'shake' : ''}`}
+              style={{
+                color: selectedTags.length >= MAX_INTEREST_TAGS ? '#8ca0ff' : '#7a829a',
+                fontWeight: selectedTags.length >= MAX_INTEREST_TAGS ? 500 : 400,
+              }}
+            >
+              {selectedTags.length}/{MAX_INTEREST_TAGS}
+            </div>
+          </div>
+
+          {TAG_CATEGORIES.map((cat) => (
+            <div key={cat.title} className="profile-tag-category">
+              <div className="profile-category-title">{cat.title}</div>
+              <div className="profile-tag-cloud">
+                {cat.tags.map((tag) => {
+                  const active = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`profile-tag ${active ? 'active' : ''}`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Right: Status & Roles */}
+        <div className="profile-section-right">
+          {/* Credit Score */}
+          <div className="profile-center-stat">
+            <div className="credit-ring-left">
+              <div className="credit-ring-container">
+                <svg className="credit-ring" viewBox="0 0 120 120">
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="52"
+                    fill="none"
+                    stroke="rgba(140, 160, 255, 0.1)"
+                    strokeWidth="8"
+                  />
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="52"
+                    fill="none"
+                    stroke="#8ca0ff"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray={326.73}
+                    strokeDashoffset={326.73 - (326.73 * Math.min((user?.creditScore ?? 0), 100)) / 100}
+                    transform="rotate(-90 60 60)"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                  />
+                </svg>
+                <div className="credit-ring-value">{user?.creditScore ?? 0}</div>
+              </div>
+              <div className="profile-center-stat-label">信用分</div>
+            </div>
+
+            <div className="credit-right">
+              {/* Wingman Cert */}
+              {user?.roles.includes('WINGMAN') && (
+                <div className="profile-center-cert">
+                  <div className="profile-center-section-label">军师认证</div>
+                  <span className="profile-center-cert-tag">{certLabels[user.wingmanCertStatus] ?? user.wingmanCertStatus}</span>
+                </div>
+              )}
+
+              <button
+                onClick={handleCheckin}
+                disabled={checkinLoading || !!checkinResult}
+                className="profile-center-checkin-btn"
+                style={{
+                  opacity: checkinResult ? 0.6 : 1,
+                  cursor: checkinResult ? 'default' : 'pointer',
+                }}
+              >
+                {checkinLoading ? '签到中...' : checkinResult ? `已签到 +${checkinResult.reward}` : '每日签到'}
+              </button>
+            </div>
+          </div>
+
+          {/* Roles */}
+          <div className="profile-center-roles">
+            <div className="profile-center-section-label">角色</div>
+            <div className="flex flex-wrap gap-2">
+              {user?.roles.map((role) => (
+                <span key={role} className="profile-center-role-tag">
+                  {roleLabels[role] ?? role}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Account Security */}
           <div className="profile-security-section">
             <button
               className="profile-security-toggle"
-              onClick={() => setSecurityOpen(!securityOpen)}
+              onClick={() => {
+                const isOpening = !securityOpen;
+                setSecurityOpen(isOpening);
+                if (isOpening && securityContentRef.current) {
+                  requestAnimationFrame(() => {
+                    if (securityContentRef.current) {
+                      setSecurityHeight(securityContentRef.current.scrollHeight);
+                    }
+                  });
+                } else {
+                  setSecurityHeight(0);
+                }
+              }}
             >
               <span>账号安全</span>
-              <span className="profile-security-arrow">{securityOpen ? '−' : '+'}</span>
+              <span className={`profile-security-arrow ${securityOpen ? 'open' : ''}`}>▼</span>
             </button>
 
-            {securityOpen && (
-              <div className="profile-security-content">
+            <div
+              className="profile-security-content"
+              style={{
+                maxHeight: securityOpen ? securityHeight : 0,
+                overflow: 'hidden',
+                transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              <div ref={securityContentRef} className="profile-security-inner">
                 {/* Campus Email (read-only) */}
                 <div className="profile-form-group">
                   <label className="profile-form-label">校园邮箱（不可修改）</label>
@@ -392,107 +597,57 @@ export function ProfilePage() {
                   )}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right: Status & Tags */}
-        <div className="profile-section-right">
-          {/* Credit Score */}
-          <div className="profile-center-stat">
-            <div className="profile-center-stat-label">信用分</div>
-            <div className="profile-center-stat-value">{user?.creditScore ?? 0}</div>
-            <button
-              onClick={handleCheckin}
-              disabled={checkinLoading || !!checkinResult}
-              className="profile-center-checkin-btn"
-              style={{
-                opacity: checkinResult ? 0.6 : 1,
-                cursor: checkinResult ? 'default' : 'pointer',
-              }}
-            >
-              {checkinLoading ? '签到中...' : checkinResult ? `已签到 +${checkinResult.reward}` : '每日签到'}
-            </button>
-          </div>
-
-          {/* Roles */}
-          <div className="profile-center-roles">
-            <div className="profile-center-section-label">角色</div>
-            <div className="flex flex-wrap gap-2">
-              {user?.roles.map((role) => (
-                <span key={role} className="profile-center-role-tag">
-                  {roleLabels[role] ?? role}
-                </span>
-              ))}
             </div>
           </div>
-
-          {/* Wingman Cert */}
-          {user?.roles.includes('WINGMAN') && (
-            <div className="profile-center-cert">
-              <div className="profile-center-section-label">军师认证</div>
-              <span className="profile-center-cert-tag">{certLabels[user.wingmanCertStatus] ?? user.wingmanCertStatus}</span>
-            </div>
-          )}
-
-          {/* Tags */}
-          <div className="profile-tag-header">
-            <label style={{ fontSize: 14, color: '#3a405a', fontWeight: 500 }}>兴趣标签</label>
-            <div
-              className={`profile-tag-count ${tagShake ? 'shake' : ''}`}
-              style={{
-                color: selectedTags.length >= MAX_INTEREST_TAGS ? '#8ca0ff' : '#7a829a',
-                fontWeight: selectedTags.length >= MAX_INTEREST_TAGS ? 500 : 400,
-              }}
-            >
-              {selectedTags.length}/{MAX_INTEREST_TAGS}
-            </div>
-          </div>
-
-          {TAG_CATEGORIES.map((cat) => (
-            <div key={cat.title} className="profile-tag-category">
-              <div className="profile-category-title">{cat.title}</div>
-              <div className="profile-tag-cloud">
-                {cat.tags.map((tag) => {
-                  const active = selectedTags.includes(tag);
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={`profile-tag ${active ? 'active' : ''}`}
-                    >
-                      {tag}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-
 
           <div style={{ height: 20 }} />
         </div>
         </div>
-
-        {/* Action Bar */}
-        <div className="profile-action-bar">
-          <button
-            onClick={() => setPage('discovery')}
-            className="profile-btn profile-btn-ghost"
-          >
-            返回发现
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={submitting}
-            className="profile-btn profile-btn-primary"
-          >
-            {submitting ? '保存中...' : '保存修改'}
-          </button>
-        </div>
-
-        {error && <p className="profile-error">{error}</p>}
       </motion.div>
+
+      {/* Nickname Modal */}
+      {nicknameModal && (
+        <div className="profile-modal-overlay" onClick={() => setNicknameModal(false)}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal-title">修改昵称</div>
+            <input
+              className="profile-modal-input"
+              value={editNickname}
+              onChange={(e) => setEditNickname(e.target.value)}
+              placeholder="输入新昵称"
+              autoFocus
+            />
+            <div className="profile-modal-actions">
+              <button className="profile-modal-btn-cancel" onClick={() => setNicknameModal(false)}>取消</button>
+              <button className="profile-modal-btn-confirm" onClick={handleSaveNickname} disabled={nicknameSaving}>
+                {nicknameSaving ? '保存中...' : '保存'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Declaration Modal */}
+      {declarationModal && (
+        <div className="profile-modal-overlay" onClick={() => setDeclarationModal(false)}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal-title">修改恋爱宣言</div>
+            <textarea
+              className="profile-modal-textarea"
+              value={editDeclaration}
+              onChange={(e) => setEditDeclaration(e.target.value)}
+              placeholder="写下你的恋爱宣言..."
+              autoFocus
+            />
+            <div className="profile-modal-actions">
+              <button className="profile-modal-btn-cancel" onClick={() => setDeclarationModal(false)}>取消</button>
+              <button className="profile-modal-btn-confirm" onClick={handleSaveDeclaration} disabled={declarationSaving}>
+                {declarationSaving ? '保存中...' : '保存'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
