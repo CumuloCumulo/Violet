@@ -365,7 +365,6 @@ input::placeholder {
 
 /* Quote textarea */
 .profile-quote-input {
-  margin-top: auto;
   margin-bottom: 20px;
 }
 
@@ -1898,4 +1897,31 @@ input::placeholder {
 .dg-tab-content .dg-tab-card-guide .guide-text {
   font-size: 14px;
   color: #7a829a;
+}
+
+/* Tab card action buttons */
+.dg-tab-content .dg-tab-card-actions-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.dg-tab-content .dg-tab-card-actions-row button {
+  flex: 1;
+  height: 36px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dg-tab-content .dg-tab-card-reject {
+  background: rgba(196, 125, 142, 0.08);
+  color: #c47d8e;
+  border: 1px solid rgba(196, 125, 142, 0.2);
+}
+.dg-tab-content .dg-tab-card-accept {
+  background: #8ca0ff;
+  color: #fff;
+  border: none;
+  box-shadow: 0 6px 20px rgba(140, 160, 255, 0.3);
+  font-weight: 500;
 }

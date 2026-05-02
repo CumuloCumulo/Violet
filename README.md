@@ -23,19 +23,14 @@ NJU代恋是一个面向南京大学学生的校园恋爱代聊平台。平台�
 
 ## 团队成员
 
-| 成员 | 角色 | 主导阶段 |
-|------|------|----------|
-| 王宇晗 | 需求负责人 | P1（需求分析） |
-| 朱玄 | 架构负责人 | P2（体系结构设计） |
-| 靳滨硕 | 开发负责人 | P4（核心编码） |
-| 庄永琪 | 测试负责人 | P6（质量保障与重构） |
+6人团队（待补充）
 
 ## 技术栈
 
 | 层级 | 技术 |
 |------|------|
 | 前端框架 | React + Vite |
-| 前端样式 | Tailwind CSS |
+| 前端样式 | CSS（印象派设计风格） |
 | 状态管理 | Zustand |
 | 后端框架 | NestJS (Node.js) |
 | 实时通信 | Socket.io |
@@ -48,13 +43,10 @@ NJU代恋是一个面向南京大学学生的校园恋爱代聊平台。平台�
 
 ```
 Violet/
-├── docs/                   # 项目文档
-│   ├── P0/                 # P0 项目启动
-│   ├── P1/                 # P1 需求分析
-│   └── ...
-├── client/                 # 前端项目（React + Vite + Tailwind CSS）
+├── client/                 # 前端项目（React + Vite）
 ├── server/                 # 后端项目（NestJS）
-├── .github/                # GitHub Actions CI配置
+├── docs/                   # 项目文档
+├── .github/                # GitHub Actions CI/CD
 ├── .gitignore
 └── README.md
 ```
@@ -104,12 +96,10 @@ main        # 稳定版本
 
 ## Commit 规范
 
-- 格式：`[阶段] 类型: 描述`
-- 标注AI使用：`[AI-assisted]` 或 `[Human-written]`
-- 示例：`[P4] feat[AI-assisted]: 实现四人聊天室核心逻辑`
+- 格式：`类型: 描述`
+- 类型：feat / fix / style / refactor / chore / docs
 
-## 课程信息
+## 赛事信息
 
-- **课程**：软件工程与计算II
-- **项目周期**：10周
-- **团队规模**：4人/组
+- **赛事**：南客松 S2（南京第二届黑客松）
+- **团队规模**：6人

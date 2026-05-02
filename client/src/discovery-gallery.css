@@ -333,14 +333,22 @@
 }
 .dg .sec-about-content {
   opacity: 0;
-  width: calc(var(--scale) * 60vmin);
+  max-width: calc(var(--scale) * 60vmin);
+  min-width: min(80vw, calc(var(--scale) * 40vmin));
+  width: 100%;
   margin-bottom: calc(var(--scale) * 4vmin);
+  padding-right: calc(var(--scale) * 5vmin);
+  box-sizing: border-box;
 }
 .dg .sec-about-content p {
   font-family: var(--font-sans);
-  font-size: calc(var(--scale) * 2.2vmin);
+  font-size: clamp(calc(var(--scale) * 1.4vmin), 2.2vw, calc(var(--scale) * 2.2vmin));
   color: var(--ink);
   line-height: 1.8;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  hyphens: auto;
 }
 .dg .sec-about-blocks {
   display: flex;
