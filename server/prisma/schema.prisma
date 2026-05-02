@@ -98,6 +98,7 @@ model User {
   wingmanCertCooldown DateTime?         // 军师认证失败冷却截止时间
   wechat        String?                 // 微信（隐藏）
   qq           String?                  // QQ（隐藏）
+  phone        String?                 // 手机号（隐藏）
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

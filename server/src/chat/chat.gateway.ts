@@ -559,6 +559,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         reason: event.reason,
         message: event.message,
       });
+
+      // Broadcast contact exchange info to both parties
+      if (event.contactExchange) {
+        const ce = event.contactExchange;
+        // Notify user1 with user2's contact info
+        this.server.to(_roomId).emit('contactExchange', {
+          relationshipId,
+          contactExchange: {
+            [ce.user1Id]: {
+              wechat: ce.user2Wechat,
+              qq: ce.user2Qq,
+            },
+            [ce.user2Id]: {
+              wechat: ce.user1Wechat,
+              qq: ce.user1Qq,
+            },
+          },
+        });
+      }
     }
 
     if (event.type === 'roomClosed') {

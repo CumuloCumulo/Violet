@@ -73,6 +73,21 @@ export function ProfilePage() {
     autoSaveProfile({ declaration: v });
   };
 
+  const handleWechatChange = (v: string) => {
+    setWechat(v);
+    autoSaveProfile({ wechat: v });
+  };
+
+  const handleQqChange = (v: string) => {
+    setQqValue(v);
+    autoSaveProfile({ qq: v });
+  };
+
+  const handlePhoneChange = (v: string) => {
+    setPhone(v);
+    autoSaveProfile({ phone: v });
+  };
+
   // Modal state
   const [nicknameModal, setNicknameModal] = useState(false);
   const [declarationModal, setDeclarationModal] = useState(false);
@@ -210,6 +225,14 @@ export function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState('');
+
+  // Contact exchange state
+  const [contactOpen, setContactOpen] = useState(false);
+  const contactContentRef = useRef<HTMLDivElement>(null);
+  const [contactHeight, setContactHeight] = useState(0);
+  const [wechat, setWechat] = useState(user?.wechat ?? '');
+  const [qqValue, setQqValue] = useState(user?.qq ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '');
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) => {
@@ -651,6 +674,21 @@ export function ProfilePage() {
                 {/* Divider */}
                 <div className="profile-security-divider" />
 
+                {/* Phone */}
+                <div className="profile-form-group">
+                  <label className="profile-form-label">手机号</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="输入手机号"
+                    className="profile-minimal-input"
+                  />
+                </div>
+
+                {/* Divider */}
+                <div className="profile-security-divider" />
+
                 {/* Change Password */}
                 <div className="profile-form-group">
                   <label className="profile-form-label">当前密码</label>
@@ -696,6 +734,68 @@ export function ProfilePage() {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Exchange Section */}
+          <div className="profile-security-section">
+            <button
+              className="profile-security-toggle"
+              onClick={() => {
+                const isOpening = !contactOpen;
+                setContactOpen(isOpening);
+                if (isOpening && contactContentRef.current) {
+                  requestAnimationFrame(() => {
+                    if (contactContentRef.current) {
+                      setContactHeight(contactContentRef.current.scrollHeight);
+                    }
+                  });
+                } else {
+                  setContactHeight(0);
+                }
+              }}
+            >
+              <span>交换信息</span>
+              <span className={`profile-security-arrow ${contactOpen ? 'open' : ''}`}>▼</span>
+            </button>
+
+            <div
+              className="profile-security-content"
+              style={{
+                maxHeight: contactOpen ? contactHeight : 0,
+                overflow: 'hidden',
+                transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
+              <div ref={contactContentRef} className="profile-security-inner">
+                <p className="profile-contact-hint">用于暧昧期自动交换，仅双方同意后对方可见</p>
+
+                <div className="profile-form-group">
+                  <label className="profile-form-label">微信号</label>
+                  <input
+                    type="text"
+                    value={wechat}
+                    onChange={(e) => handleWechatChange(e.target.value)}
+                    placeholder="输入微信号"
+                    className="profile-minimal-input"
+                  />
+                </div>
+
+                <div className="profile-form-group">
+                  <label className="profile-form-label">QQ号</label>
+                  <input
+                    type="text"
+                    value={qqValue}
+                    onChange={(e) => handleQqChange(e.target.value)}
+                    placeholder="输入QQ号"
+                    className="profile-minimal-input"
+                  />
+                </div>
+
+                {!wechat && !qqValue && (
+                  <p className="profile-contact-warning">请至少填写一项，否则进入暧昧期时无法交换</p>
+                )}
               </div>
             </div>
           </div>

@@ -49,6 +49,8 @@ interface ChatState {
   /** Server marked this room as read-only when joining (e.g. FLIRTING) */
   isReadOnly: boolean;
   flirtingProposal: { relationshipId: string; fromUserId: string } | null;
+  /** Contact info received when entering FLIRTING phase */
+  exchangedContact: { wechat: string | null; qq: string | null } | null;
 
   connect: (userId: string, url?: string) => void;
   disconnect: () => void;
@@ -78,6 +80,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   roomClosedRelId: null,
   isReadOnly: false,
   flirtingProposal: null,
+  exchangedContact: null,
 
   connect: (userId: string, url: string = window.location.origin) => {
     const existingSocket = get().socket;
@@ -251,6 +254,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     socket.on('roomReadOnly', (data: { relationshipId: string; reason: string; message: string }) => {
       set({ roomClosedReason: data.reason, roomClosedRelId: data.relationshipId });
+    });
+
+    socket.on('contactExchange', (data: { relationshipId: string; contactExchange: Record<string, { wechat: string | null; qq: string | null }> }) => {
+      const myUserId = get().userId;
+      if (myUserId && data.contactExchange[myUserId]) {
+        set({ exchangedContact: data.contactExchange[myUserId] });
+      }
     });
 
     set({ socket, userId });

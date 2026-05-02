@@ -84,7 +84,7 @@ export function WingmanHallPage() {
   };
 
   return (
-    <div className="min-h-screen relative" style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem' }}>
+    <div className="wh min-h-screen relative" style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem' }}>
       {/* Header */}
       <header className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
