@@ -1778,3 +1778,124 @@ input::placeholder {
     transform: translateY(-20px);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Tab Content Overrides (sent / received / relationships)
+   Overrides .dg-tab-* from discovery-gallery.css
+   ═══════════════════════════════════════════════════════════ */
+
+.dg-tab-content {
+  align-items: center;
+}
+
+/* Tab grid/layout overrides (higher specificity to beat discovery-gallery.css load order) */
+.dg-tab-content .dg-tab-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  max-width: 1200px;
+  gap: 30px;
+}
+
+.dg-tab-content .dg-tab-card {
+  width: 100%;
+  max-width: 300px;
+  min-height: 480px;
+  box-sizing: border-box;
+}
+
+/* ── Empty State ── */
+.empty-state-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 340px;
+  animation: emptyFadeIn 0.6s ease-out both;
+}
+@keyframes emptyFadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.empty-state-icon {
+  width: 56px;
+  height: 56px;
+  color: var(--violet-main, #8ca0ff);
+  opacity: 0.5;
+}
+.empty-state-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.empty-state-title {
+  font-family: var(--font-serif, serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: #3a405a;
+  margin: 0;
+  line-height: 1.4;
+}
+.empty-state-description {
+  font-size: 13px;
+  color: #7a829a;
+  margin: 0;
+  line-height: 1.6;
+}
+.empty-state-decoration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.empty-state-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--violet-main, #8ca0ff);
+  opacity: 0.35;
+}
+.empty-state-line {
+  width: 32px;
+  height: 1px;
+  background: var(--violet-main, #8ca0ff);
+  opacity: 0.2;
+}
+
+/* ── Guide Card (placeholder) ── */
+.dg-tab-content .dg-tab-card-guide {
+  background: transparent;
+  border: 2px dashed rgba(161, 196, 253, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+.dg-tab-content .dg-tab-card-guide:hover {
+  border-color: rgba(161, 196, 253, 0.9);
+  background: rgba(255, 255, 255, 0.2);
+}
+.dg-tab-content .dg-tab-card-guide .guide-icon {
+  font-size: 28px;
+  opacity: 0.7;
+}
+.dg-tab-content .dg-tab-card-guide .guide-text {
+  font-size: 14px;
+  color: #7a829a;
+}
