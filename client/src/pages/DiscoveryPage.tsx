@@ -693,150 +693,183 @@ export function DiscoveryPage() {
           <div className="dg-tab-grid">
             {tab === 'sent' && (
               sentRequests.length === 0 ? (
-                <p style={{ color: 'var(--ink-muted)', fontSize: 14, textAlign: 'center', gridColumn: '1/-1', padding: 48 }}>
-                  还没有发起过牵线
-                </p>
+                <div className="empty-state-wrapper"><div className="empty-state-container"><div className="empty-state-content">
+                  <div className="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg></div>
+                  <h3 className="empty-state-title">还没有发起过牵线</h3>
+                  <p className="empty-state-description">去发现页面寻找心仪的灵魂吧</p>
+                  <div className="empty-state-decoration"><div className="empty-state-dot" /><div className="empty-state-line" /><div className="empty-state-dot" /></div>
+                </div></div></div>
               ) : (
-                sentRequests.map((r) => {
-                  const u = r.toUser!;
-                  const [g0, g1] = getAuraGradient(u.id, u.gender);
-                  const statusInfo: Record<string, { text: string; color: string }> = {
-                    PENDING: { text: '等待中', color: '#c4a35a' }, ACCEPTED: { text: '已接受', color: '#6b8c5a' },
-                    REJECTED: { text: '已拒绝', color: '#c47d8e' }, EXPIRED: { text: '已过期', color: '#9e98aa' },
-                  };
-                  const si = statusInfo[r.status] ?? { text: r.status, color: '#9e98aa' };
-                  return (
-                    <div key={r.id} className="dg-tab-card">
-                      <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
-                      <div className="dg-tab-card-meta">
-                        <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: u.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: u.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
-                          {u.gender === 'male' ? '男' : u.gender === 'female' ? '女' : '?'}
-                        </span>
-                        <span style={{ fontSize: 13, color: '#7a829a' }}>{u.campus}{u.campus && u.grade ? ' · ' : ''}{u.grade}</span>
-                      </div>
-                      <p className="dg-tab-card-quote">{u.declaration ? `"${u.declaration}"` : '"..."'}</p>
-                      {u.interests.length > 0 && (
-                        <div className="dg-tab-card-tags">
-                          {u.interests.slice(0, 5).map((tag) => <span key={tag} className="dg-tab-card-tag">{tag}</span>)}
+                <>
+                  {sentRequests.map((r) => {
+                    const u = r.toUser!;
+                    const [g0, g1] = getAuraGradient(u.id, u.gender);
+                    const statusInfo: Record<string, { text: string; color: string }> = {
+                      PENDING: { text: '等待中', color: '#c4a35a' }, ACCEPTED: { text: '已接受', color: '#6b8c5a' },
+                      REJECTED: { text: '已拒绝', color: '#c47d8e' }, EXPIRED: { text: '已过期', color: '#9e98aa' },
+                    };
+                    const si = statusInfo[r.status] ?? { text: r.status, color: '#9e98aa' };
+                    return (
+                      <div key={r.id} className="dg-tab-card">
+                        <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
+                        <div className="dg-tab-card-meta">
+                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: u.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: u.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
+                            {u.gender === 'male' ? '男' : u.gender === 'female' ? '女' : '?'}
+                          </span>
+                          <span style={{ fontSize: 13, color: '#7a829a' }}>{u.campus}{u.campus && u.grade ? ' · ' : ''}{u.grade}</span>
                         </div>
-                      )}
-                      <div className="dg-tab-card-action">
-                        <span className="dg-tab-card-status" style={{ color: si.color }}>{si.text}</span>
+                        <p className="dg-tab-card-quote">{u.declaration ? `"${u.declaration}"` : '"..."'}</p>
+                        {u.interests.length > 0 && (
+                          <div className="dg-tab-card-tags">
+                            {u.interests.slice(0, 5).map((tag) => <span key={tag} className="dg-tab-card-tag">{tag}</span>)}
+                          </div>
+                        )}
+                        <div className="dg-tab-card-action">
+                          <span className="dg-tab-card-status" style={{ color: si.color }}>{si.text}</span>
+                        </div>
                       </div>
+                    );
+                  })}
+                  {sentRequests.length < 3 && (
+                    <div className="dg-tab-card dg-tab-card-guide" onClick={() => setTab('discover')}>
+                      <span className="guide-icon">✨</span>
+                      <span className="guide-text">去发现更多有趣的灵魂</span>
                     </div>
-                  );
-                })
+                  )}
+                </>
               )
             )}
 
             {tab === 'received' && (
               receivedRequests.length === 0 ? (
-                <p style={{ color: 'var(--ink-muted)', fontSize: 14, textAlign: 'center', gridColumn: '1/-1', padding: 48 }}>
-                  暂无收到的牵线请求
-                </p>
+                <div className="empty-state-wrapper"><div className="empty-state-container"><div className="empty-state-content">
+                  <div className="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg></div>
+                  <h3 className="empty-state-title">暂无收到的牵线请求</h3>
+                  <p className="empty-state-description">当有人向你发起心动时，这里会显示</p>
+                  <div className="empty-state-decoration"><div className="empty-state-dot" /><div className="empty-state-line" /><div className="empty-state-dot" /></div>
+                </div></div></div>
               ) : (
-                receivedRequests.map((r) => {
-                  const u = r.fromUser!;
-                  const [g0, g1] = getAuraGradient(u.id, u.gender);
-                  return (
-                    <div key={r.id} className="dg-tab-card">
-                      <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
-                      <div className="dg-tab-card-meta">
-                        <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: u.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: u.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
-                          {u.gender === 'male' ? '男' : u.gender === 'female' ? '女' : '?'}
-                        </span>
-                        <span style={{ fontSize: 13, color: '#7a829a' }}>{u.campus}{u.campus && u.grade ? ' · ' : ''}{u.grade}</span>
-                      </div>
-                      <p className="dg-tab-card-quote">{u.declaration ? `"${u.declaration}"` : '"..."'}</p>
-                      {u.interests.length > 0 && (
-                        <div className="dg-tab-card-tags">
-                          {u.interests.slice(0, 5).map((tag) => <span key={tag} className="dg-tab-card-tag">{tag}</span>)}
+                <>
+                  {receivedRequests.map((r) => {
+                    const u = r.fromUser!;
+                    const [g0, g1] = getAuraGradient(u.id, u.gender);
+                    return (
+                      <div key={r.id} className="dg-tab-card">
+                        <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
+                        <div className="dg-tab-card-meta">
+                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: u.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: u.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
+                            {u.gender === 'male' ? '男' : u.gender === 'female' ? '女' : '?'}
+                          </span>
+                          <span style={{ fontSize: 13, color: '#7a829a' }}>{u.campus}{u.campus && u.grade ? ' · ' : ''}{u.grade}</span>
                         </div>
-                      )}
-                      <div className="dg-tab-card-actions-row">
-                        <button className="dg-tab-card-reject" onClick={() => rejectRequest(r.id)}>不合适</button>
-                        <button className="dg-tab-card-accept" onClick={() => acceptRequest(r.id)}>接受心动</button>
+                        <p className="dg-tab-card-quote">{u.declaration ? `"${u.declaration}"` : '"..."'}</p>
+                        {u.interests.length > 0 && (
+                          <div className="dg-tab-card-tags">
+                            {u.interests.slice(0, 5).map((tag) => <span key={tag} className="dg-tab-card-tag">{tag}</span>)}
+                          </div>
+                        )}
+                        <div className="dg-tab-card-actions-row">
+                          <button className="dg-tab-card-reject" onClick={() => rejectRequest(r.id)}>不合适</button>
+                          <button className="dg-tab-card-accept" onClick={() => acceptRequest(r.id)}>接受心动</button>
+                        </div>
                       </div>
+                    );
+                  })}
+                  {receivedRequests.length < 3 && (
+                    <div className="dg-tab-card dg-tab-card-guide" onClick={() => setTab('discover')}>
+                      <span className="guide-icon">✨</span>
+                      <span className="guide-text">去发现更多有趣的灵魂</span>
                     </div>
-                  );
-                })
+                  )}
+                </>
               )
             )}
 
             {tab === 'relationships' && (
               relationships.length === 0 ? (
-                <p style={{ color: 'var(--ink-muted)', fontSize: 14, textAlign: 'center', gridColumn: '1/-1', padding: 48 }}>
-                  暂无进行中的关系
-                </p>
+                <div className="empty-state-wrapper"><div className="empty-state-container"><div className="empty-state-content">
+                  <div className="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2" /><line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2" /></svg></div>
+                  <h3 className="empty-state-title">暂无进行中的关系</h3>
+                  <p className="empty-state-description">接受心动请求或发起牵线，开始你的故事</p>
+                  <div className="empty-state-decoration"><div className="empty-state-dot" /><div className="empty-state-line" /><div className="empty-state-dot" /></div>
+                </div></div></div>
               ) : (
-                relationships.map((rel) => {
-                  const statusLabel: Record<string, { text: string; color: string }> = {
-                    ICEBREAKING: { text: '破冰中', color: '#8ca0ff' }, FLIRTING: { text: '暧昧期', color: '#c47d8e' },
-                    MATCHING: { text: '牵线中', color: '#c4a35a' },
-                  };
-                  const info = statusLabel[rel.status] ?? { text: rel.status, color: '#9e98aa' };
+                <>
+                  {relationships.map((rel) => {
+                    const statusLabel: Record<string, { text: string; color: string }> = {
+                      ICEBREAKING: { text: '破冰中', color: '#8ca0ff' }, FLIRTING: { text: '暧昧期', color: '#c47d8e' },
+                      MATCHING: { text: '牵线中', color: '#c4a35a' },
+                    };
+                    const info = statusLabel[rel.status] ?? { text: rel.status, color: '#9e98aa' };
 
-                  if (rel.role === 'wingman') {
-                    const c1 = rel.client1!, c2 = rel.client2!;
+                    if (rel.role === 'wingman') {
+                      const c1 = rel.client1!, c2 = rel.client2!;
+                      return (
+                        <div key={rel.id} className="dg-tab-card">
+                          <div className="dg-tab-card-meta">
+                            <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, background: 'rgba(212,237,164,0.35)', color: '#5a7332', border: '1px solid rgba(212,237,164,0.6)' }}>军师身份</span>
+                            <span style={{ fontSize: 13, color: '#7a829a' }}>
+                              {rel.wingmanMode === 'SOLO' ? '代聊' : rel.wingmanMode === 'PRIVATE' ? '私聊' : '辅助'}模式
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0' }}>
+                            <div style={{ flex: 1, textAlign: 'center' }}>
+                              <p style={{ fontSize: 14, fontWeight: 500, color: '#3a405a' }}>{c1.nickname}</p>
+                              <p style={{ fontSize: 10, color: '#9e98aa' }}>{c1.gender === 'male' ? '男' : '女'}{c1.campus ? ` · ${c1.campus}` : ''}</p>
+                            </div>
+                            <span style={{ color: '#8ca0ff' }}>↔</span>
+                            <div style={{ flex: 1, textAlign: 'center' }}>
+                              <p style={{ fontSize: 14, fontWeight: 500, color: '#3a405a' }}>{c2.nickname}</p>
+                              <p style={{ fontSize: 10, color: '#9e98aa' }}>{c2.gender === 'male' ? '男' : '女'}{c2.campus ? ` · ${c2.campus}` : ''}</p>
+                            </div>
+                          </div>
+                          <div className="dg-tab-card-action">
+                            <span className="dg-tab-card-status" style={{ color: info.color }}>{info.text}</span>
+                            <button className="dg-tab-card-btn" onClick={() => handleEnterRelationship(rel.id)}>
+                              进入聊天 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const ou = rel.otherUser!;
+                    const [g0, g1] = getAuraGradient(ou.id, ou.gender);
                     return (
                       <div key={rel.id} className="dg-tab-card">
+                        <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
                         <div className="dg-tab-card-meta">
-                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, background: 'rgba(212,237,164,0.35)', color: '#5a7332', border: '1px solid rgba(212,237,164,0.6)' }}>军师身份</span>
-                          <span style={{ fontSize: 13, color: '#7a829a' }}>
-                            {rel.wingmanMode === 'SOLO' ? '代聊' : rel.wingmanMode === 'PRIVATE' ? '私聊' : '辅助'}模式
+                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: ou.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: ou.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
+                            {ou.gender === 'male' ? '男' : ou.gender === 'female' ? '女' : '?'}
                           </span>
+                          <span style={{ fontSize: 13, color: '#7a829a' }}>{ou.campus}{ou.campus && ou.grade ? ' · ' : ''}{ou.grade}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0' }}>
-                          <div style={{ flex: 1, textAlign: 'center' }}>
-                            <p style={{ fontSize: 14, fontWeight: 500, color: '#3a405a' }}>{c1.nickname}</p>
-                            <p style={{ fontSize: 10, color: '#9e98aa' }}>{c1.gender === 'male' ? '男' : '女'}{c1.campus ? ` · ${c1.campus}` : ''}</p>
+                        <p className="dg-tab-card-quote">{ou.declaration ? `"${ou.declaration}"` : '"..."'}</p>
+                        {ou.interests.length > 0 && (
+                          <div className="dg-tab-card-tags">
+                            {ou.interests.slice(0, 5).map((tag) => <span key={tag} className="dg-tab-card-tag">{tag}</span>)}
                           </div>
-                          <span style={{ color: '#8ca0ff' }}>↔</span>
-                          <div style={{ flex: 1, textAlign: 'center' }}>
-                            <p style={{ fontSize: 14, fontWeight: 500, color: '#3a405a' }}>{c2.nickname}</p>
-                            <p style={{ fontSize: 10, color: '#9e98aa' }}>{c2.gender === 'male' ? '男' : '女'}{c2.campus ? ` · ${c2.campus}` : ''}</p>
-                          </div>
-                        </div>
+                        )}
                         <div className="dg-tab-card-action">
-                          <span className="dg-tab-card-status" style={{ color: info.color }}>{info.text}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <span className="dg-tab-card-status" style={{ color: info.color }}>{info.text}</span>
+                            {rel.myWingman && <span style={{ fontSize: 10, color: '#5a7332' }}>军师: {rel.myWingman.nickname} ({rel.myWingman.mode})</span>}
+                          </div>
                           <button className="dg-tab-card-btn" onClick={() => handleEnterRelationship(rel.id)}>
-                            进入聊天 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                            {rel.status === 'FLIRTING' ? '查看' : '进入聊天'}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                           </button>
                         </div>
                       </div>
                     );
-                  }
-
-                  const ou = rel.otherUser!;
-                  const [g0, g1] = getAuraGradient(ou.id, ou.gender);
-                  return (
-                    <div key={rel.id} className="dg-tab-card">
-                      <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
-                      <div className="dg-tab-card-meta">
-                        <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: ou.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: ou.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
-                          {ou.gender === 'male' ? '男' : ou.gender === 'female' ? '女' : '?'}
-                        </span>
-                        <span style={{ fontSize: 13, color: '#7a829a' }}>{ou.campus}{ou.campus && ou.grade ? ' · ' : ''}{ou.grade}</span>
-                      </div>
-                      <p className="dg-tab-card-quote">{ou.declaration ? `"${ou.declaration}"` : '"..."'}</p>
-                      {ou.interests.length > 0 && (
-                        <div className="dg-tab-card-tags">
-                          {ou.interests.slice(0, 5).map((tag) => <span key={tag} className="dg-tab-card-tag">{tag}</span>)}
-                        </div>
-                      )}
-                      <div className="dg-tab-card-action">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <span className="dg-tab-card-status" style={{ color: info.color }}>{info.text}</span>
-                          {rel.myWingman && <span style={{ fontSize: 10, color: '#5a7332' }}>军师: {rel.myWingman.nickname} ({rel.myWingman.mode})</span>}
-                        </div>
-                        <button className="dg-tab-card-btn" onClick={() => handleEnterRelationship(rel.id)}>
-                          {rel.status === 'FLIRTING' ? '查看' : '进入聊天'}
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                        </button>
-                      </div>
+                  })}
+                  {relationships.length < 3 && (
+                    <div className="dg-tab-card dg-tab-card-guide" onClick={() => setTab('discover')}>
+                      <span className="guide-icon">✨</span>
+                      <span className="guide-text">去发现更多有趣的灵魂</span>
                     </div>
-                  );
-                })
+                  )}
+                </>
               )
             )}
           </div>
