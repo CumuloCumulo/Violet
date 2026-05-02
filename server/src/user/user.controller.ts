@@ -45,6 +45,9 @@ export class UserController {
       campus?: string;
       grade?: string;
       major?: string;
+      wechat?: string;
+      qq?: string;
+      phone?: string;
     },
   ) {
     return this.userService.updateProfile(req.user.userId, body);

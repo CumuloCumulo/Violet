@@ -11,6 +11,30 @@ import { CreditService } from '../credit/credit.service.js';
 const MATCH_REQUEST_COST = 5;
 const EXPIRATION_HOURS = 24;
 
+const DEFAULT_CARD_IMAGES = [
+  '/uploads/cards/apple.png',
+  '/uploads/cards/black-panther.png',
+  '/uploads/cards/boy.png',
+  '/uploads/cards/calla-lily.png',
+  '/uploads/cards/five-loaves-two-fish.png',
+  '/uploads/cards/girl.png',
+  '/uploads/cards/kitten-drinking-water.png',
+  '/uploads/cards/little-lamb.png',
+  '/uploads/cards/man-in-rainy-night.png',
+  '/uploads/cards/moses-parting-red-sea.png',
+  '/uploads/cards/penguin.png',
+  '/uploads/cards/starlight.png',
+  '/uploads/cards/sunset.png',
+];
+
+function getDefaultCardImage(userId: string): string {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash + userId.charCodeAt(i)) | 0;
+  }
+  return DEFAULT_CARD_IMAGES[Math.abs(hash) % DEFAULT_CARD_IMAGES.length];
+}
+
 @Injectable()
 export class DiscoveryService {
   constructor(
@@ -51,7 +75,15 @@ export class DiscoveryService {
       }),
     ]);
 
-    return { users, total, page, pageSize };
+    return {
+      users: users.map((u) => ({
+        ...u,
+        cardImage: u.cardImage ?? getDefaultCardImage(u.id),
+      })),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async sendMatchRequest(fromUserId: string, toUserId: string) {

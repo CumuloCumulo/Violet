@@ -14,6 +14,9 @@ export interface AuthUser {
   interests: string[];
   declaration: string | null;
   cardImage: string | null;
+  wechat: string | null;
+  qq: string | null;
+  phone: string | null;
   creditScore: number;
   roles: string[];
   wingmanCertStatus: string;

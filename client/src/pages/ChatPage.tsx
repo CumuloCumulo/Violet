@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useChatStore } from '../stores/chatStore';
 import { ChatPanel } from '../components/ChatPanel';
 import { WingmanPanel } from '../components/WingmanPanel';
+import { useToast, ToastContainer } from '../components/Toast';
 
 interface ChatPageProps {
   userId: string;
@@ -35,6 +36,8 @@ export function ChatPage({
   const flirtingProposal = useChatStore((s) => s.flirtingProposal);
   const transitionStatus = useChatStore((s) => s.transitionStatus);
   const clearFlirtingProposal = useChatStore((s) => s.clearFlirtingProposal);
+  const exchangedContact = useChatStore((s) => s.exchangedContact);
+  const { toasts, showToast, removeToast } = useToast();
 
   const [relationshipStatus] = useState<string>('ICEBREAKING');
 
@@ -125,10 +128,15 @@ export function ChatPage({
   // Only apply roomClosedReason when it belongs to THIS room
   const isRoomClosed = roomClosedRelId === relationshipId;
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => showToast('已复制', 'success')).catch(() => {});
+  };
+
   if (isRoomClosed && (roomClosedReason === 'FLIRTING' || roomClosedReason === 'ENDED')) {
     const isFlirting = roomClosedReason === 'FLIRTING';
     return (
       <div className="h-screen flex items-center justify-center p-4 relative">
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
         <div className="ambient-bg">
           <div className="blob blob-1" />
           <div className="blob blob-2" />
@@ -143,7 +151,42 @@ export function ChatPage({
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: isFlirting ? '#c47d8e' : '#7a829a', fontWeight: 600 }}>
             {isFlirting ? '恭喜进入暧昧期！' : '聊天已结束'}
           </h2>
-          {isFlirting && (
+          {isFlirting && exchangedContact && (
+            <div className="text-left space-y-3">
+              <div className="text-sm font-medium" style={{ color: '#3a405a' }}>对方的联系方式</div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs shrink-0" style={{ color: '#7a829a', width: 36 }}>微信</span>
+                {exchangedContact.wechat ? (
+                  <>
+                    <span className="text-sm flex-1" style={{ color: '#3a405a' }}>{exchangedContact.wechat}</span>
+                    <button
+                      onClick={() => handleCopy(exchangedContact.wechat!)}
+                      className="text-xs px-2 py-1 rounded-lg cursor-pointer"
+                      style={{ background: 'rgba(140,160,255,0.1)', color: '#8ca0ff', border: 'none' }}
+                    >复制</button>
+                  </>
+                ) : (
+                  <span className="text-sm" style={{ color: '#b0a8ba' }}>对方未设置</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs shrink-0" style={{ color: '#7a829a', width: 36 }}>QQ</span>
+                {exchangedContact.qq ? (
+                  <>
+                    <span className="text-sm flex-1" style={{ color: '#3a405a' }}>{exchangedContact.qq}</span>
+                    <button
+                      onClick={() => handleCopy(exchangedContact.qq!)}
+                      className="text-xs px-2 py-1 rounded-lg cursor-pointer"
+                      style={{ background: 'rgba(140,160,255,0.1)', color: '#8ca0ff', border: 'none' }}
+                    >复制</button>
+                  </>
+                ) : (
+                  <span className="text-sm" style={{ color: '#b0a8ba' }}>对方未设置</span>
+                )}
+              </div>
+            </div>
+          )}
+          {isFlirting && !exchangedContact && (
             <p className="text-sm" style={{ color: '#5a627a' }}>
               可在关系列表中查看聊天记录
             </p>

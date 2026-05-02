@@ -1352,6 +1352,99 @@ input::placeholder {
   margin: 12px 0;
 }
 
+.profile-contact-hint {
+  font-size: 12px;
+  color: #7a829a;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.profile-contact-warning {
+  font-size: 12px;
+  color: #c4a07d;
+  margin: 4px 0 0;
+}
+
+/* ========================================
+   Wingman Hall Task Cards (.wh prefix)
+   ======================================== */
+.wh .soul-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  padding: 20px;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 20px 50px rgba(140, 160, 255, 0.12);
+}
+
+.wh .soul-card .aura {
+  position: absolute;
+  top: -40%;
+  right: -30%;
+  width: 70%;
+  height: 80%;
+  border-radius: 50%;
+  opacity: 0.25;
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wh .soul-card > *:not(.aura) {
+  position: relative;
+  z-index: 1;
+}
+
+.wh .card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.wh .gender-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.wh .info-text {
+  font-size: 12px;
+  color: #7a829a;
+}
+
+.wh .tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.wh .hobby-tag {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  background: rgba(140, 160, 255, 0.08);
+  color: #6b82f0;
+  border: 1px solid rgba(140, 160, 255, 0.15);
+}
+
+.wh .card-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 /* ========================================
    Avatar Upload
    ======================================== */
