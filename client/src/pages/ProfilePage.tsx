@@ -3,12 +3,14 @@ import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { apiFetch, apiUpload } from '../lib/api';
 import { TAG_CATEGORIES, MAX_INTEREST_TAGS } from '../lib/tags';
+import { useToast, ToastContainer } from '../components/Toast';
 
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const updateProfile = useAuthStore((s) => s.updateProfile);
   const setPage = useAuthStore((s) => s.setPage);
   const logout = useAuthStore((s) => s.logout);
+  const { toasts, showToast, removeToast } = useToast();
 
   const [gender, setGender] = useState(user?.gender ?? '');
   const [campus, setCampus] = useState(user?.campus ?? '');
@@ -38,8 +40,10 @@ export function ProfilePage() {
     saveTimerRef.current = setTimeout(async () => {
       try {
         await updateProfile(updates as any);
+        showToast('已保存', 'success');
       } catch (e: any) {
         console.error('自动保存失败:', e.message);
+        showToast('保存失败', 'error');
       }
     }, 800);
   };
@@ -96,8 +100,10 @@ export function ProfilePage() {
     try {
       await updateProfile({ nickname: editNickname || undefined } as any);
       setNicknameModal(false);
+      showToast('昵称已更新', 'success');
     } catch (e: any) {
       setAvatarError(e.message ?? '保存失败');
+      showToast('保存失败', 'error');
     } finally {
       setNicknameSaving(false);
     }
@@ -108,8 +114,10 @@ export function ProfilePage() {
     try {
       await updateProfile({ declaration: editDeclaration || undefined } as any);
       setDeclarationModal(false);
+      showToast('恋爱宣言已更新', 'success');
     } catch (e: any) {
       setAvatarError(e.message ?? '保存失败');
+      showToast('保存失败', 'error');
     } finally {
       setDeclarationSaving(false);
     }
@@ -137,8 +145,10 @@ export function ProfilePage() {
       formData.append('avatar', file);
       const updated = await apiUpload<any>('/user/avatar', formData);
       useAuthStore.setState({ user: { ...user, ...updated } as any });
+      showToast('头像已更新', 'success');
     } catch (err: any) {
       setAvatarError(err.message ?? '上传失败');
+      showToast('上传失败', 'error');
     } finally {
       setAvatarUploading(false);
       // Reset input so same file can be re-selected
@@ -167,8 +177,10 @@ export function ProfilePage() {
       formData.append('cardImage', file);
       const updated = await apiUpload<any>('/user/card-image', formData);
       useAuthStore.setState({ user: { ...user, ...updated } as any });
+      showToast('卡片已更新', 'success');
     } catch (err: any) {
       setCardError(err.message ?? '上传失败');
+      showToast('上传失败', 'error');
     } finally {
       setCardUploading(false);
       if (cardInputRef.current) cardInputRef.current.value = '';
@@ -179,8 +191,10 @@ export function ProfilePage() {
     try {
       const updated = await apiFetch<any>('/user/card-image', { method: 'DELETE' });
       useAuthStore.setState({ user: { ...user, ...updated } as any });
+      showToast('卡片已删除', 'success');
     } catch (err: any) {
       setCardError(err.message ?? '删除失败');
+      showToast('删除失败', 'error');
     }
   };
 
@@ -214,8 +228,10 @@ export function ProfilePage() {
     const timer = setTimeout(async () => {
       try {
         await updateProfile({ interests: selectedTags } as any);
+        showToast('标签已更新', 'success');
       } catch (e: any) {
         console.error('标签保存失败:', e.message);
+        showToast('标签保存失败', 'error');
       }
     }, 500);
     return () => clearTimeout(timer);
@@ -248,8 +264,9 @@ export function ProfilePage() {
         body: JSON.stringify({ newEmail: contactEmail.trim() }),
       });
       useAuthStore.setState({ user: { ...user, ...updatedUser } as any });
-      setEmailMsg('常用邮箱已更新');
+      showToast('常用邮箱已更新', 'success');
     } catch (e: any) {
+      showToast(e.message ?? '修改失败', 'error');
       setEmailMsg(e.message ?? '修改失败');
     } finally {
       setEmailSaving(false);
@@ -276,11 +293,12 @@ export function ProfilePage() {
         method: 'PATCH',
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-      setPasswordMsg('密码已修改');
+      showToast('密码已修改', 'success');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (e: any) {
+      showToast(e.message ?? '修改失败', 'error');
       setPasswordMsg(e.message ?? '修改失败');
     } finally {
       setPasswordSaving(false);
@@ -292,6 +310,9 @@ export function ProfilePage() {
 
   return (
     <div className="profile-center-page">
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
       {/* Header */}
       <motion.div
         className="profile-center-header"
