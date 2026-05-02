@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
 import { apiFetch } from '../lib/api';
 import '../discovery-gallery.css';
+import { getAuraGradient, genderLabel, genderIcon, genderTagStyle } from '../lib/genderUtils';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -55,26 +56,7 @@ interface RelationshipInfo {
 type Tab = 'discover' | 'sent' | 'received' | 'relationships';
 
 // ─── Aura Gradients ─────────────────────────────────────────
-
-const AURA_FEMALE: [string, string][] = [
-  ['#fecfef', '#ff9a9e'],
-  ['#fbc2eb', '#a6c1ee'],
-  ['#fecfef', '#a6c1ee'],
-];
-const AURA_MALE: [string, string][] = [
-  ['#a1c4fd', '#c2e9fb'],
-  ['#d4eda4', '#a1c4fd'],
-  ['#d4eda4', '#c2e9fb'],
-];
-const AURA_OTHER: [string, string][] = [
-  ['#a1c4fd', '#c2e9fb'],
-  ['#d4eda4', '#c2e9fb'],
-];
-
-function getAuraGradient(userId: string, gender: string | null): [string, string] {
-  const pool = gender === 'female' ? AURA_FEMALE : gender === 'male' ? AURA_MALE : AURA_OTHER;
-  return pool[userId.charCodeAt(userId.length - 1) % pool.length];
-}
+// (moved to lib/genderUtils.ts)
 
 // timeAgo kept for potential future use in card status
 // timeAgo utility reserved for future card status display
@@ -651,7 +633,7 @@ export function DiscoveryPage() {
                                 }
                               />
                               <div className="soul-card-aura-glass" />
-                              <span className="gender-icon">{u.gender === 'female' ? '♀' : u.gender === 'male' ? '♂' : '?'}</span>
+                              <span className="gender-icon">{genderIcon(u.gender)}</span>
                             </div>
                             <div className="soul-card-content">
                               <div className="soul-card-meta">
@@ -713,8 +695,8 @@ export function DiscoveryPage() {
                       <div key={r.id} className="dg-tab-card">
                         <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
                         <div className="dg-tab-card-meta">
-                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: u.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: u.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
-                            {u.gender === 'male' ? '男' : u.gender === 'female' ? '女' : '?'}
+                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, ...genderTagStyle(u.gender) }}>
+                            {genderLabel(u.gender)}
                           </span>
                           <span style={{ fontSize: 13, color: '#7a829a' }}>{u.campus}{u.campus && u.grade ? ' · ' : ''}{u.grade}</span>
                         </div>
@@ -757,8 +739,8 @@ export function DiscoveryPage() {
                       <div key={r.id} className="dg-tab-card">
                         <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
                         <div className="dg-tab-card-meta">
-                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: u.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: u.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
-                            {u.gender === 'male' ? '男' : u.gender === 'female' ? '女' : '?'}
+                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, ...genderTagStyle(u.gender) }}>
+                            {genderLabel(u.gender)}
                           </span>
                           <span style={{ fontSize: 13, color: '#7a829a' }}>{u.campus}{u.campus && u.grade ? ' · ' : ''}{u.grade}</span>
                         </div>
@@ -815,12 +797,12 @@ export function DiscoveryPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '12px 0' }}>
                             <div style={{ flex: 1, textAlign: 'center' }}>
                               <p style={{ fontSize: 14, fontWeight: 500, color: '#3a405a' }}>{c1.nickname}</p>
-                              <p style={{ fontSize: 10, color: '#9e98aa' }}>{c1.gender === 'male' ? '男' : '女'}{c1.campus ? ` · ${c1.campus}` : ''}</p>
+                              <p style={{ fontSize: 10, color: '#9e98aa' }}>{genderLabel(c1.gender)}{c1.campus ? ` · ${c1.campus}` : ''}</p>
                             </div>
                             <span style={{ color: '#8ca0ff' }}>↔</span>
                             <div style={{ flex: 1, textAlign: 'center' }}>
                               <p style={{ fontSize: 14, fontWeight: 500, color: '#3a405a' }}>{c2.nickname}</p>
-                              <p style={{ fontSize: 10, color: '#9e98aa' }}>{c2.gender === 'male' ? '男' : '女'}{c2.campus ? ` · ${c2.campus}` : ''}</p>
+                              <p style={{ fontSize: 10, color: '#9e98aa' }}>{genderLabel(c2.gender)}{c2.campus ? ` · ${c2.campus}` : ''}</p>
                             </div>
                           </div>
                           <div className="dg-tab-card-action">
@@ -839,8 +821,8 @@ export function DiscoveryPage() {
                       <div key={rel.id} className="dg-tab-card">
                         <div className="dg-tab-card-aura" style={{ background: `linear-gradient(135deg,${g0},${g1})` }} />
                         <div className="dg-tab-card-meta">
-                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, background: ou.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)', color: ou.gender === 'male' ? '#6b82f0' : '#c47d8e' }}>
-                            {ou.gender === 'male' ? '男' : ou.gender === 'female' ? '女' : '?'}
+                          <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, ...genderTagStyle(ou.gender) }}>
+                            {genderLabel(ou.gender)}
                           </span>
                           <span style={{ fontSize: 13, color: '#7a829a' }}>{ou.campus}{ou.campus && ou.grade ? ' · ' : ''}{ou.grade}</span>
                         </div>

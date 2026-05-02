@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { apiFetch, apiUpload } from '../lib/api';
 import { TAG_CATEGORIES, MAX_INTEREST_TAGS } from '../lib/tags';
+import { genderPickerLabel } from '../lib/genderUtils';
 import { useToast, ToastContainer } from '../components/Toast';
 
 export function ProfilePage() {
@@ -407,13 +408,13 @@ export function ProfilePage() {
           <div className="profile-form-group">
             <label className="profile-form-label">性别</label>
             <div className="profile-pill-group">
-              {(['male', 'female'] as const).map((g) => (
+              {(['male', 'female', 'non_binary'] as const).map((g) => (
                 <button
                   key={g}
                   onClick={() => handleGenderChange(g)}
                   className={`profile-pill ${gender === g ? 'active' : ''}`}
                 >
-                  {g === 'male' ? '男生' : '女生'}
+                  {genderPickerLabel(g)}
                 </button>
               ))}
             </div>

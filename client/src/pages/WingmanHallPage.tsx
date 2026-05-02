@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { apiFetch } from '../lib/api';
+import { genderLabel, genderTagStyle } from '../lib/genderUtils';
 
 interface WingmanTaskClient {
   id: string;
@@ -232,12 +233,9 @@ function TaskCard({
       <div className="card-meta">
         <span
           className="gender-tag"
-          style={{
-            background: client.gender === 'male' ? 'rgba(140,160,255,0.15)' : 'rgba(196,125,142,0.15)',
-            color: client.gender === 'male' ? '#6b82f0' : '#c47d8e',
-          }}
+          style={genderTagStyle(client.gender)}
         >
-          {client.gender === 'male' ? '男' : client.gender === 'female' ? '女' : '?'}
+          {genderLabel(client.gender)}
         </span>
         <span className="info-text">
           {client.campus}{client.campus && client.grade ? ' · ' : ''}{client.grade}
