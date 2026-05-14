@@ -132,6 +132,8 @@ model User {
   creditLogs     CreditLog[]
   // 管理员操作记录
   adminActions   CreditLog[] @relation("AdminActions")
+  // 收到的通知
+  notifications  Notification[]
 }
 
 // ==================== 关系（牵线/破冰/暧昧） ====================
@@ -304,4 +306,20 @@ model CreditLog {
 
   @@index([userId, createdAt])
   @@index([adminId, createdAt])
+}
+
+// ==================== 通知 ====================
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String                        // 接收通知的用户
+  type      String                        // 通知类型
+  title     String                        // 通知标题
+  content   String?                       // 通知内容
+  data      Json?                         // 附加数据（关系ID、用户ID等）
+  read      Boolean  @default(false)      // 是否已读
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
 }

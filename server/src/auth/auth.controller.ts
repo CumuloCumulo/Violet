@@ -16,9 +16,23 @@ import { JwtAuthGuard } from './jwt-auth.guard.js';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Post('send-code')
+  @HttpCode(HttpStatus.OK)
+  async sendCode(@Body() body: { email: string }) {
+    return this.authService.sendCode(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(
+    @Body() body: { email: string; code: string; newPassword: string },
+  ) {
+    return this.authService.resetPassword(body.email, body.code, body.newPassword);
+  }
+
   @Post('register')
   async register(
-    @Body() body: { email: string; nickname: string; password: string },
+    @Body() body: { email: string; nickname: string; password: string; code: string },
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.register(body);

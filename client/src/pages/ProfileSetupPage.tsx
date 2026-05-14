@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { TAG_CATEGORIES, MAX_INTEREST_TAGS } from '../lib/tags';
@@ -7,7 +8,7 @@ import { genderPickerLabel } from '../lib/genderUtils';
 export function ProfileSetupPage() {
   const user = useAuthStore((s) => s.user);
   const updateProfile = useAuthStore((s) => s.updateProfile);
-  const setPage = useAuthStore((s) => s.setPage);
+  const navigate = useNavigate();
 
   const [gender, setGender] = useState(user?.gender ?? '');
   const [campus, setCampus] = useState(user?.campus ?? '');
@@ -43,7 +44,7 @@ export function ProfileSetupPage() {
         declaration: declaration || undefined,
         interests: selectedTags,
       } as any);
-      setPage('discovery');
+      navigate('/');
     } catch (e: any) {
       setError(e.message ?? '保存失败');
     } finally {
@@ -183,7 +184,7 @@ export function ProfileSetupPage() {
         {/* Action Bar */}
         <div className="profile-action-bar">
           <button
-            onClick={() => setPage('discovery')}
+            onClick={() => navigate('/')}
             className="profile-btn profile-btn-ghost"
           >
             稍后再说

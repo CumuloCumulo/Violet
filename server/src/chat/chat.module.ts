@@ -6,8 +6,10 @@ import { PresenceService } from './presence.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ChatController } from './chat.controller.js';
 import { ChatLifecycleService } from './chat-lifecycle.service.js';
+import { NotificationModule } from '../notification/notification.module.js';
 
 @Module({
+  imports: [NotificationModule],
   providers: [
     ChatGateway,
     ChatService,

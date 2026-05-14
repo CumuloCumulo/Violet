@@ -7,10 +7,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '@prisma/client';
+import { NotificationService } from '../notification/notification.service.js';
 
 @Injectable()
 export class WingmanTaskService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async createTask(
     clientId: string,
@@ -171,6 +175,20 @@ export class WingmanTaskService {
         wingmanId,
         status: 'PENDING',
       },
+    }).then(async (app) => {
+      // Notify the client that someone applied
+      const wingman = await this.prisma.user.findUnique({
+        where: { id: wingmanId },
+        select: { nickname: true },
+      });
+      await this.notificationService.createNotification({
+        userId: task.clientId,
+        type: 'WINGMAN_APPLIED',
+        title: `${wingman?.nickname ?? '有军师'} 申请加入你的关系`,
+        content: '快去军师大厅审批吧',
+        data: { taskId, wingmanId, wingmanNickname: wingman?.nickname },
+      });
+      return app;
     });
   }
 
@@ -261,6 +279,16 @@ export class WingmanTaskService {
         });
 
         return { task: updatedTask, assignment };
+      }).then(async (result) => {
+        // Notify the approved wingman
+        await this.notificationService.createNotification({
+          userId: wingmanId,
+          type: 'WINGMAN_APPROVED',
+          title: '你的军师申请已通过',
+          content: '快去帮当事人破冰吧',
+          data: { relationshipId: task.relationshipId! },
+        });
+        return result;
       });
     } catch (error) {
       if (
@@ -298,10 +326,20 @@ export class WingmanTaskService {
       throw new BadRequestException('该申请不存在或已处理');
     }
 
-    return this.prisma.wingmanApplication.update({
+    const updated = await this.prisma.wingmanApplication.update({
       where: { id: application.id },
       data: { status: 'REJECTED' },
     });
+
+    // Notify the rejected wingman
+    await this.notificationService.createNotification({
+      userId: wingmanId,
+      type: 'WINGMAN_REJECTED',
+      title: '你的军师申请未被通过',
+      content: '别灰心，继续寻找机会吧',
+    });
+
+    return updated;
   }
 
   async cancelTask(taskId: string, clientId: string) {

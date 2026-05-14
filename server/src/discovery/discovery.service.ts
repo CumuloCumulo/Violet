@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreditService } from '../credit/credit.service.js';
+import { NotificationService } from '../notification/notification.service.js';
 
 const MATCH_REQUEST_COST = 5;
 const EXPIRATION_HOURS = 24;
@@ -40,6 +41,7 @@ export class DiscoveryService {
   constructor(
     private prisma: PrismaService,
     private creditService: CreditService,
+    private notificationService: NotificationService,
   ) {}
 
   async listUsers(userId: string, page: number = 1, pageSize: number = 20) {
@@ -131,6 +133,19 @@ export class DiscoveryService {
         toUserId,
         status: 'PENDING',
       },
+    });
+
+    // Notify recipient
+    const sender = await this.prisma.user.findUnique({
+      where: { id: fromUserId },
+      select: { nickname: true },
+    });
+    await this.notificationService.createNotification({
+      userId: toUserId,
+      type: 'MATCH_REQUEST_RECEIVED',
+      title: `${sender?.nickname ?? '有人'} 向你发了心动`,
+      content: '快去看看吧',
+      data: { matchRequestId: request.id, fromUserId },
     });
 
     return request;
@@ -388,6 +403,19 @@ export class DiscoveryService {
       return { request: updated, relationship };
     });
 
+    // Notify the sender that their request was accepted
+    const accepter = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { nickname: true },
+    });
+    await this.notificationService.createNotification({
+      userId: request.fromUserId,
+      type: 'MATCH_REQUEST_ACCEPTED',
+      title: `${accepter?.nickname ?? '对方'} 接受了你的心动`,
+      content: '破冰聊天已开启',
+      data: { relationshipId: result.relationship.id },
+    });
+
     return result;
   }
 
@@ -408,10 +436,20 @@ export class DiscoveryService {
       throw new BadRequestException('请求已处理');
     }
 
-    return this.prisma.matchRequest.update({
+    const updated = await this.prisma.matchRequest.update({
       where: { id: requestId },
       data: { status: 'REJECTED' },
     });
+
+    // Notify the sender that their request was rejected
+    await this.notificationService.createNotification({
+      userId: request.fromUserId,
+      type: 'MATCH_REQUEST_REJECTED',
+      title: '你的心动请求被婉拒了',
+      content: '别灰心，继续寻找有缘人吧',
+    });
+
+    return updated;
   }
 
   private isExpired(createdAt: Date): boolean {

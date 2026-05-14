@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
+import { useNotificationStore } from '../stores/notificationStore';
 import { apiFetch } from '../lib/api';
 import '../discovery-gallery.css';
 import { getAuraGradient, genderLabel, genderIcon, genderTagStyle } from '../lib/genderUtils';
@@ -103,11 +105,13 @@ function seededRandom(seed: number) {
 
 export function DiscoveryPage() {
   const user = useAuthStore((s) => s.user);
-  const enterChat = useAuthStore((s) => s.enterChat);
   const logout = useAuthStore((s) => s.logout);
-  const setPage = useAuthStore((s) => s.setPage);
+  const navigate = useNavigate();
   const connect = useChatStore((s) => s.connect);
+  const totalUnread = useChatStore((s) => s.totalUnread);
   const joinRoom = useChatStore((s) => s.joinRoom);
+  const notificationUnread = useNotificationStore((s) => s.unreadCount);
+  const fetchNotificationUnread = useNotificationStore((s) => s.fetchUnreadCount);
 
   const [tab, setTab] = useState<Tab>('discover');
   const [users, setUsers] = useState<DiscoverUser[]>([]);
@@ -160,6 +164,7 @@ export function DiscoveryPage() {
   }, [tab, fetchUsers, fetchSent, fetchReceived, fetchRelationships]);
 
   useEffect(() => { fetchReceived(); }, [fetchReceived]);
+  useEffect(() => { fetchNotificationUnread(); }, [fetchNotificationUnread]);
 
   // ── Actions ──────────────────────────────────────────────
 
@@ -177,7 +182,7 @@ export function DiscoveryPage() {
     try {
       const res = await apiFetch<{ relationship: { id: string } }>(`/discovery/match-request/${id}/accept`, { method: 'POST' });
       connect(user!.id);
-      setTimeout(() => { joinRoom(res.relationship.id); enterChat(res.relationship.id); }, 300);
+      setTimeout(() => { joinRoom(res.relationship.id); navigate(`/chat/${res.relationship.id}`); }, 300);
     } catch (e: any) { setActionError(e.message); }
   };
 
@@ -189,7 +194,7 @@ export function DiscoveryPage() {
 
   const handleEnterRelationship = (relId: string) => {
     connect(user!.id);
-    setTimeout(() => { joinRoom(relId); enterChat(relId); }, 300);
+    setTimeout(() => { joinRoom(relId); navigate(`/chat/${relId}`); }, 300);
   };
 
   // ── Gallery Refs ─────────────────────────────────────────
@@ -491,20 +496,29 @@ export function DiscoveryPage() {
                 {t === 'received' && receivedRequests.length > 0 && (
                   <span className="dg-nav-badge">{receivedRequests.length}</span>
                 )}
+                {t === 'relationships' && totalUnread > 0 && (
+                  <span className="dg-nav-badge">{totalUnread}</span>
+                )}
               </button>
             ))}
           </div>
         </div>
         <div className="dg-nav-right">
           <span className="dg-nav-score">{user?.creditScore ?? 0} 分</span>
+          <button className="dg-nav-btn btn-notify" onClick={() => navigate('/notifications')}>
+            消息
+            {notificationUnread > 0 && (
+              <span className="dg-nav-badge">{notificationUnread > 99 ? '99+' : notificationUnread}</span>
+            )}
+          </button>
           {user?.roles.includes('WINGMAN') && (
-            <button className="dg-nav-btn btn-junshi" onClick={() => setPage('wingman-hall')}>军师大厅</button>
+            <button className="dg-nav-btn btn-junshi" onClick={() => navigate('/wingman-hall')}>军师大厅</button>
           )}
           {user?.roles.includes('ADMIN') && (
-            <button className="dg-nav-btn btn-admin" onClick={() => setPage('admin')}>管理</button>
+            <button className="dg-nav-btn btn-admin" onClick={() => navigate('/admin')}>管理</button>
           )}
-          <button className="dg-nav-btn btn-profile" onClick={() => setPage('profile')}>个人中心</button>
-          <button className="dg-nav-btn btn-logout" onClick={logout}>退出</button>
+          <button className="dg-nav-btn btn-profile" onClick={() => navigate('/profile')}>个人中心</button>
+          <button className="dg-nav-btn btn-logout" onClick={async () => { await logout(); navigate('/login'); }}>退出</button>
         </div>
       </nav>
 
@@ -637,6 +651,9 @@ export function DiscoveryPage() {
                             </div>
                             <div className="soul-card-content">
                               <div className="soul-card-meta">
+                                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 12, fontWeight: 500, ...genderTagStyle(u.gender) }}>
+                                  {genderLabel(u.gender)}
+                                </span>
                                 <p>{u.campus ?? ''}{u.campus && u.grade ? ' · ' : ''}{u.grade ?? ''}</p>
                               </div>
                               <div className="soul-card-quote">

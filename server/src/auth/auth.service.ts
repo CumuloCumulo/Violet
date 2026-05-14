@@ -3,8 +3,11 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { MailService } from '../mail/mail.service.js';
+import Redis from 'ioredis';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 
@@ -14,15 +17,43 @@ const INITIAL_CREDIT = 20;
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  private redis: Redis;
 
-  async register(dto: { email: string; nickname: string; password: string }) {
-    const { email, nickname, password } = dto;
+  constructor(
+    private prisma: PrismaService,
+    private mailService: MailService,
+  ) {
+    this.redis = new Redis({
+      host: process.env['REDIS_HOST'] ?? 'localhost',
+      port: parseInt(process.env['REDIS_PORT'] ?? '6379', 10),
+    });
+  }
+
+  async sendCode(email: string) {
+    if (!email.endsWith('@smail.nju.edu.cn')) {
+      throw new BadRequestException('仅支持南大 smail 邮箱注册');
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    await this.redis.set(`verify:${email}`, code, 'EX', 300);
+    await this.mailService.sendVerificationCode(email, code);
+    return { message: '验证码已发送' };
+  }
+
+  async register(dto: { email: string; nickname: string; password: string; code: string }) {
+    const { email, nickname, password, code } = dto;
 
     // Validate NJU email
     if (!email.endsWith('@smail.nju.edu.cn')) {
       throw new BadRequestException('仅支持南大 smail 邮箱注册');
     }
+
+    // Verify code
+    const stored = await this.redis.get(`verify:${email}`);
+    if (!stored || stored !== code) {
+      throw new BadRequestException('验证码错误或已过期');
+    }
+    await this.redis.del(`verify:${email}`);
 
     // Check duplicate
     const existing = await this.prisma.user.findUnique({ where: { email } });
@@ -69,6 +100,35 @@ export class AuthService {
 
     const token = this.signToken(user.id, user.email);
     return { token, user: this.sanitizeUser(user) };
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    // Verify code
+    const stored = await this.redis.get(`verify:${email}`);
+    if (!stored || stored !== code) {
+      throw new BadRequestException('验证码错误或已过期');
+    }
+
+    // Find user
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('该邮箱未注册');
+    }
+
+    // Validate new password
+    if (newPassword.length < 6) {
+      throw new BadRequestException('密码至少 6 位');
+    }
+
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    await this.redis.del(`verify:${email}`);
+    return { message: '密码重置成功' };
   }
 
   async validateUser(userId: string) {

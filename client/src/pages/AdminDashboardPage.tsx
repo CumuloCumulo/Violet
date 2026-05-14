@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { useAuthStore } from '../stores/authStore';
 import { apiFetch } from '../lib/api';
 
 interface AdminStats {
@@ -66,7 +66,7 @@ function getAuraGradient(id: string): string {
 }
 
 export function AdminDashboardPage() {
-  const setPage = useAuthStore((s) => s.setPage);
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -145,7 +145,7 @@ export function AdminDashboardPage() {
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <button onClick={() => setPage('profile')} className="admin-back-btn">
+        <button onClick={() => navigate('/profile')} className="admin-back-btn">
           ← 个人中心
         </button>
         <h1>Violet 管理</h1>

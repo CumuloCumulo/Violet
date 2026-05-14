@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { ChatModule } from './chat/chat.module.js';
@@ -8,12 +9,14 @@ import { CreditModule } from './credit/credit.module.js';
 import { DiscoveryModule } from './discovery/discovery.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { WingmanTaskModule } from './wingman-task/wingman-task.module.js';
+import { NotificationModule } from './notification/notification.module.js';
 import { DevModule } from './dev/dev.module.js';
 
 const devImports = process.env['NODE_ENV'] !== 'production' ? [DevModule] : [];
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     AuthModule,
     UserModule,
     CreditModule,
@@ -21,6 +24,7 @@ const devImports = process.env['NODE_ENV'] !== 'production' ? [DevModule] : [];
     ChatModule,
     AdminModule,
     WingmanTaskModule,
+    NotificationModule,
     ...devImports,
   ],
   controllers: [AppController],
