@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { apiFetch, apiUpload } from '../lib/api';
@@ -9,7 +10,7 @@ import { useToast, ToastContainer } from '../components/Toast';
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const updateProfile = useAuthStore((s) => s.updateProfile);
-  const setPage = useAuthStore((s) => s.setPage);
+  const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
   const { toasts, showToast, removeToast } = useToast();
 
@@ -21,7 +22,24 @@ export function ProfilePage() {
   const [selectedTags, setSelectedTags] = useState<string[]>(user?.interests ?? []);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinResult, setCheckinResult] = useState<{ balance: number; reward: number } | null>(null);
+  const [todayCheckedIn, setTodayCheckedIn] = useState(false);
   const [tagShake, setTagShake] = useState(false);
+
+  // Check today's check-in status on mount
+  useEffect(() => {
+    const fetchCheckinStatus = async () => {
+      try {
+        const status = await apiFetch<{ hasCheckedIn: boolean; reward: number }>('/credit/checkin/status');
+        if (status.hasCheckedIn) {
+          setTodayCheckedIn(true);
+          setCheckinResult({ balance: user?.creditScore ?? 0, reward: status.reward });
+        }
+      } catch {
+        // Silently ignore — check-in feature degrades gracefully
+      }
+    };
+    fetchCheckinStatus();
+  }, []);
 
   // Avatar upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -268,6 +286,7 @@ export function ProfilePage() {
       setCheckinResult(result);
       // Refresh user data
       await updateProfile({} as any);
+      setTodayCheckedIn(true);
     } catch (e: any) {
       console.error('签到失败:', e.message);
     } finally {
@@ -344,13 +363,13 @@ export function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
       >
-        <button onClick={() => setPage('discovery')} className="profile-center-back">
+        <button onClick={() => navigate('/')} className="profile-center-back">
           ← 发现
         </button>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 24, color: '#3a405a', fontWeight: 500 }}>
           个人中心
         </h1>
-        <button onClick={logout} className="profile-center-logout">
+        <button onClick={async () => { await logout(); navigate('/login'); }} className="profile-center-logout">
           退出
         </button>
       </motion.div>
@@ -585,14 +604,14 @@ export function ProfilePage() {
 
               <button
                 onClick={handleCheckin}
-                disabled={checkinLoading || !!checkinResult}
+                disabled={checkinLoading || todayCheckedIn}
                 className="profile-center-checkin-btn"
                 style={{
-                  opacity: checkinResult ? 0.6 : 1,
-                  cursor: checkinResult ? 'default' : 'pointer',
+                  opacity: todayCheckedIn ? 0.6 : 1,
+                  cursor: todayCheckedIn ? 'default' : 'pointer',
                 }}
               >
-                {checkinLoading ? '签到中...' : checkinResult ? `已签到 +${checkinResult.reward}` : '每日签到'}
+                {checkinLoading ? '签到中...' : todayCheckedIn ? `已签到 +${checkinResult?.reward ?? 3}` : '每日签到'}
               </button>
             </div>
           </div>

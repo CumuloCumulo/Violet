@@ -1,28 +1,42 @@
 import { useEffect, useCallback, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuthStore } from '../stores/authStore';
 import { useChatStore } from '../stores/chatStore';
 import { ChatPanel } from '../components/ChatPanel';
 import { WingmanPanel } from '../components/WingmanPanel';
 import { useToast, ToastContainer } from '../components/Toast';
 
 interface ChatPageProps {
-  userId: string;
-  relationshipId: string;
+  /** Dev mode: override userId */
+  userId?: string;
+  /** Dev mode: override relationshipId */
+  relationshipId?: string;
   /** 私聊对象的 userId：当事人传军师 ID，军师传当事人 ID */
   privateChatTargetId?: string;
   /** 军师 ID（仅当事人需要，用于模式切换） */
   wingmanId?: string;
+  /** Dev mode: override onExit */
   onExit?: () => void;
 }
 
 export function ChatPage({
-  userId,
-  relationshipId,
+  userId: userIdProp,
+  relationshipId: relationshipIdProp,
   privateChatTargetId,
   wingmanId,
   onExit,
 }: ChatPageProps) {
+  const params = useParams<{ relationshipId: string }>();
+  const navigate = useNavigate();
+  const authUser = useAuthStore((s) => s.user);
+
+  // Use prop values (DevApp) or fall back to URL params + auth store (ProdApp)
+  const userId = userIdProp ?? authUser?.id ?? '';
+  const relationshipId = relationshipIdProp ?? params.relationshipId ?? '';
+  const handleExit = onExit ?? (() => navigate('/'));
+
   const connect = useChatStore((s) => s.connect);
   const joinRoom = useChatStore((s) => s.joinRoom);
   const leaveRoom = useChatStore((s) => s.leaveRoom);
@@ -42,18 +56,18 @@ export function ChatPage({
   const [relationshipStatus] = useState<string>('ICEBREAKING');
 
   useEffect(() => {
-    connect(userId);
+    if (userId) connect(userId);
   }, [userId, connect]);
 
   useEffect(() => {
-    if (connected) {
+    if (connected && relationshipId) {
       joinRoom(relationshipId);
     }
   }, [connected, relationshipId, joinRoom]);
 
   useEffect(() => {
     return () => {
-      leaveRoom(relationshipId);
+      if (relationshipId) leaveRoom(relationshipId);
     };
   }, [relationshipId, leaveRoom]);
 
@@ -192,7 +206,7 @@ export function ChatPage({
             </p>
           )}
           <button
-            onClick={onExit}
+            onClick={handleExit}
             className="w-full h-10 rounded-2xl text-sm font-medium cursor-pointer"
             style={{ background: '#8ca0ff', color: '#fff', border: 'none', boxShadow: '0 6px 20px rgba(140,160,255,0.3)' }}
           >
@@ -216,7 +230,7 @@ export function ChatPage({
           }}
         >
           <button
-            onClick={onExit}
+            onClick={handleExit}
             className="transition-colors"
             style={{ color: '#7a829a', marginLeft: -8 }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#3a405a'; }}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 import { apiFetch } from '../lib/api';
@@ -54,7 +55,7 @@ function timeAgo(dateStr: string): string {
 
 export function WingmanHallPage() {
   const user = useAuthStore((s) => s.user);
-  const setPage = useAuthStore((s) => s.setPage);
+  const navigate = useNavigate();
 
   const [tasks, setTasks] = useState<WingmanTask[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +91,7 @@ export function WingmanHallPage() {
       <header className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => setPage('discovery')}
+            onClick={() => navigate('/')}
             className="text-sm transition-colors cursor-pointer"
             style={{ color: '#7a829a', background: 'none', border: 'none', padding: 0 }}
           >

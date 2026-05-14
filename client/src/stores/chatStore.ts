@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
+import { useNotificationStore, type NotificationItem } from './notificationStore';
 
 export interface ChatMessage {
   id: string;
@@ -51,6 +52,10 @@ interface ChatState {
   flirtingProposal: { relationshipId: string; fromUserId: string } | null;
   /** Contact info received when entering FLIRTING phase */
   exchangedContact: { wechat: string | null; qq: string | null } | null;
+  /** Unread message counts per relationship (for notification badges) */
+  unreadCounts: Record<string, number>;
+  /** Total unread count across all relationships */
+  totalUnread: number;
 
   connect: (userId: string, url?: string) => void;
   disconnect: () => void;
@@ -81,6 +86,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isReadOnly: false,
   flirtingProposal: null,
   exchangedContact: null,
+  unreadCounts: {},
+  totalUnread: 0,
 
   connect: (userId: string, url: string = window.location.origin) => {
     const existingSocket = get().socket;
@@ -100,32 +107,34 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     socket.on('roomJoined', (data: { relationshipId: string; messages: ChatMessage[]; role: string; client1Id?: string | null; client2Id?: string | null; wingmanMode1?: string | null; wingmanMode2?: string | null; wingmanId1?: string | null; wingmanId2?: string | null; readOnly?: boolean }) => {
-      set((state) => ({
-        activeRoom: data.relationshipId,
-        myRole: data.role,
-        // readOnly means user navigated to a FLIRTING room — show read-only chat, NOT overlay
-        isReadOnly: !!data.readOnly,
-        // Always clear room closed state on join — readOnly flag handles read-only mode.
-        // The overlay should only appear during real-time roomReadOnly events, not when re-visiting.
-        roomClosedReason: null,
-        roomClosedRelId: null,
-        messages: {
-          ...state.messages,
-          [data.relationshipId]: data.messages,
-        },
-        rooms: {
-          ...state.rooms,
-          [data.relationshipId]: {
-            members: state.rooms[data.relationshipId]?.members ?? [],
-            client1Id: data.client1Id ?? null,
-            client2Id: data.client2Id ?? null,
-            wingmanId1: data.wingmanId1 ?? null,
-            wingmanId2: data.wingmanId2 ?? null,
-            wingmanMode1: data.wingmanMode1 ?? null,
-            wingmanMode2: data.wingmanMode2 ?? null,
+      set((state) => {
+        const newCounts = { ...state.unreadCounts, [data.relationshipId]: 0 };
+        return {
+          activeRoom: data.relationshipId,
+          myRole: data.role,
+          isReadOnly: !!data.readOnly,
+          roomClosedReason: null,
+          roomClosedRelId: null,
+          messages: {
+            ...state.messages,
+            [data.relationshipId]: data.messages,
           },
-        },
-      }));
+          rooms: {
+            ...state.rooms,
+            [data.relationshipId]: {
+              members: state.rooms[data.relationshipId]?.members ?? [],
+              client1Id: data.client1Id ?? null,
+              client2Id: data.client2Id ?? null,
+              wingmanId1: data.wingmanId1 ?? null,
+              wingmanId2: data.wingmanId2 ?? null,
+              wingmanMode1: data.wingmanMode1 ?? null,
+              wingmanMode2: data.wingmanMode2 ?? null,
+            },
+          },
+          unreadCounts: newCounts,
+          totalUnread: Object.values(newCounts).reduce((sum, c) => sum + c, 0),
+        };
+      });
     });
 
     socket.on('newMessage', (message: ChatMessage) => {
@@ -133,19 +142,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
         const relId = message.relationshipId;
         const existing = state.messages[relId] ?? [];
         // If same ID exists, remove old and append at end (e.g. PENDING → MAIN after confirm)
-        if (existing.some((m) => m.id === message.id)) {
-          return {
-            messages: {
-              ...state.messages,
-              [relId]: [...existing.filter((m) => m.id !== message.id), message],
-            },
-          };
-        }
+        const isDuplicate = existing.some((m) => m.id === message.id);
+        const updatedMessages = isDuplicate
+          ? [...existing.filter((m) => m.id !== message.id), message]
+          : [...existing, message];
+
+        // Increment unread if not in this room
+        const notInRoom = state.activeRoom !== relId;
+        const currentCount = state.unreadCounts[relId] ?? 0;
+        const newUnread = notInRoom && !message.isSystem ? currentCount + 1 : currentCount;
+        const newCounts = { ...state.unreadCounts, [relId]: newUnread };
+
         return {
-          messages: {
-            ...state.messages,
-            [relId]: [...existing, message],
-          },
+          messages: { ...state.messages, [relId]: updatedMessages },
+          unreadCounts: newCounts,
+          totalUnread: Object.values(newCounts).reduce((sum, c) => sum + c, 0),
         };
       });
     });
@@ -261,6 +272,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (myUserId && data.contactExchange[myUserId]) {
         set({ exchangedContact: data.contactExchange[myUserId] });
       }
+    });
+
+    socket.on('notification', (notification: NotificationItem) => {
+      useNotificationStore.getState().handleIncomingNotification(notification);
     });
 
     set({ socket, userId });

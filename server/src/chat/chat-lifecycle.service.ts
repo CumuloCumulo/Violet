@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ChatService } from './chat.service.js';
 import { RoomService } from './room.service.js';
 import { PresenceService } from './presence.service.js';
+import { NotificationService } from '../notification/notification.service.js';
 import type { RelationshipStatus } from '@prisma/client';
 
 export interface LifecycleEvent {
@@ -28,6 +29,7 @@ export class ChatLifecycleService {
     private readonly chatService: ChatService,
     private readonly roomService: RoomService,
     private readonly presenceService: PresenceService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -75,6 +77,31 @@ export class ChatLifecycleService {
       '破冰聊天已开启，开始你们的对话吧！',
     );
 
+    // Notify both clients
+    const relationship = await this.prisma.relationship.findUnique({
+      where: { id: relationshipId },
+      include: {
+        user1: { select: { nickname: true } },
+        user2: { select: { nickname: true } },
+      },
+    });
+    if (relationship) {
+      await Promise.all([
+        this.notificationService.createNotification({
+          userId: relationship.user1Id,
+          type: 'RELATIONSHIP_ICEBREAKING',
+          title: `与 ${relationship.user2.nickname} 的破冰聊天已开启`,
+          data: { relationshipId },
+        }),
+        this.notificationService.createNotification({
+          userId: relationship.user2Id,
+          type: 'RELATIONSHIP_ICEBREAKING',
+          title: `与 ${relationship.user1.nickname} 的破冰聊天已开启`,
+          data: { relationshipId },
+        }),
+      ]);
+    }
+
     return {
       type: 'roomOpened',
       relationshipId,
@@ -117,6 +144,24 @@ export class ChatLifecycleService {
       lines.join('\n'),
     );
 
+    // Notify both clients about flirting phase
+    await Promise.all([
+      this.notificationService.createNotification({
+        userId: user1!.id,
+        type: 'RELATIONSHIP_FLIRTING',
+        title: `与 ${user2?.nickname} 已进入暧昧期`,
+        content: '联系方式已交换',
+        data: { relationshipId },
+      }),
+      this.notificationService.createNotification({
+        userId: user2!.id,
+        type: 'RELATIONSHIP_FLIRTING',
+        title: `与 ${user1?.nickname} 已进入暧昧期`,
+        content: '联系方式已交换',
+        data: { relationshipId },
+      }),
+    ]);
+
     return {
       type: 'roomReadOnly',
       relationshipId,
@@ -135,6 +180,28 @@ export class ChatLifecycleService {
 
   private async onEnded(relationshipId: string): Promise<LifecycleEvent> {
     await this.chatService.createSystemMessage(relationshipId, '聊天已结束。');
+
+    // Notify both clients
+    const rel = await this.prisma.relationship.findUnique({
+      where: { id: relationshipId },
+      select: { user1Id: true, user2Id: true },
+    });
+    if (rel) {
+      await Promise.all([
+        this.notificationService.createNotification({
+          userId: rel.user1Id,
+          type: 'RELATIONSHIP_ENDED',
+          title: '一段关系已结束',
+          data: { relationshipId },
+        }),
+        this.notificationService.createNotification({
+          userId: rel.user2Id,
+          type: 'RELATIONSHIP_ENDED',
+          title: '一段关系已结束',
+          data: { relationshipId },
+        }),
+      ]);
+    }
 
     await this.prisma.wingmanAssignment.updateMany({
       where: { relationshipId, leftAt: null },

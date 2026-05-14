@@ -1,20 +1,26 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 
+const EMAIL_SUFFIX = '@smail.nju.edu.cn';
+
 export function LoginPage() {
   const login = useAuthStore((s) => s.login);
-  const setPage = useAuthStore((s) => s.setPage);
-  const [email, setEmail] = useState('');
+  const navigate = useNavigate();
+  const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const email = studentId.trim() + EMAIL_SUFFIX;
 
   const handleLogin = async () => {
     setError('');
     setSubmitting(true);
     try {
       await login(email, password);
+      navigate('/');
     } catch (e: any) {
       setError(e.message ?? '登录失败');
     } finally {
@@ -22,7 +28,7 @@ export function LoginPage() {
     }
   };
 
-  const canSubmit = email.trim() && password.trim() && !submitting;
+  const canSubmit = studentId.trim() && password.trim() && !submitting;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative">
@@ -55,21 +61,31 @@ export function LoginPage() {
         >
           <div>
             <label className="block text-xs font-light mb-1.5" style={{ color: '#7a829a' }}>
-              南大邮箱
+              南大学号
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@smail.nju.edu.cn"
-              className="w-full h-11 px-4 rounded-2xl text-sm outline-none transition-all"
+            <div
+              className="flex items-center h-11 rounded-2xl overflow-hidden"
               style={{
                 background: 'rgba(255, 255, 255, 0.5)',
-                color: '#3a405a',
                 border: '1px solid rgba(140, 160, 255, 0.15)',
               }}
-              onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleLogin()}
-            />
+            >
+              <input
+                type="text"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                placeholder="学号"
+                className="flex-1 h-full px-4 text-sm outline-none bg-transparent"
+                style={{ color: '#3a405a' }}
+                onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleLogin()}
+              />
+              <span
+                className="shrink-0 px-3 text-xs whitespace-nowrap"
+                style={{ color: '#8ca0ff' }}
+              >
+                {EMAIL_SUFFIX}
+              </span>
+            </div>
           </div>
 
           <div>
@@ -115,9 +131,16 @@ export function LoginPage() {
             {submitting ? '登录中...' : '登录'}
           </button>
 
-          <div className="text-center pt-1">
+          <div className="flex items-center justify-between pt-1">
             <button
-              onClick={() => setPage('register')}
+              onClick={() => navigate('/reset-password')}
+              className="text-xs font-light transition-colors"
+              style={{ color: '#7a829a' }}
+            >
+              <span style={{ color: '#8ca0ff' }}>忘记密码？</span>
+            </button>
+            <button
+              onClick={() => navigate('/register')}
               className="text-xs font-light transition-colors"
               style={{ color: '#7a829a' }}
             >

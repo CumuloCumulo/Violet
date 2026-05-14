@@ -25,59 +25,64 @@ export interface AuthUser {
   updatedAt: string;
 }
 
-type AppPage = 'login' | 'register' | 'profile-setup' | 'discovery' | 'chat' | 'profile' | 'admin' | 'wingman-hall';
-
 interface AuthState {
   user: AuthUser | null;
   loading: boolean;
-  page: AppPage;
-  chatRelationshipId: string | null;
 
-  setPage: (page: AppPage) => void;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, nickname: string, password: string) => Promise<void>;
+  register: (email: string, nickname: string, password: string, code: string) => Promise<void>;
+  sendCode: (email: string) => Promise<void>;
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
   updateProfile: (data: Partial<AuthUser>) => Promise<void>;
-  enterChat: (relationshipId: string) => void;
-  exitChat: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
-  page: 'login',
-  chatRelationshipId: null,
-
-  setPage: (page) => set({ page }),
 
   login: async (email, password) => {
     const res = await apiFetch<{ user: AuthUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    set({ user: res.user, page: 'discovery', loading: false });
+    set({ user: res.user, loading: false });
   },
 
-  register: async (email, nickname, password) => {
+  register: async (email, nickname, password, code) => {
     const res = await apiFetch<{ user: AuthUser }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, nickname, password }),
+      body: JSON.stringify({ email, nickname, password, code }),
     });
-    set({ user: res.user, page: 'profile-setup', loading: false });
+    set({ user: res.user, loading: false });
+  },
+
+  sendCode: async (email) => {
+    await apiFetch('/auth/send-code', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  resetPassword: async (email, code, newPassword) => {
+    await apiFetch('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, newPassword }),
+    });
   },
 
   logout: async () => {
     await apiFetch('/auth/logout', { method: 'POST' }).catch(() => {});
-    set({ user: null, page: 'login', chatRelationshipId: null });
+    set({ user: null });
   },
 
   fetchMe: async () => {
     try {
       const user = await apiFetch<AuthUser>('/auth/me', { method: 'POST' });
-      set({ user, page: 'discovery', loading: false });
+      set({ user, loading: false });
     } catch {
-      set({ user: null, page: 'login', loading: false });
+      set({ user: null, loading: false });
     }
   },
 
@@ -88,19 +93,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     set({ user: updated });
   },
-
-  enterChat: (relationshipId) => {
-    set({ chatRelationshipId: relationshipId, page: 'chat' });
-  },
-
-  exitChat: () => {
-    set({ chatRelationshipId: null, page: 'discovery' });
-  },
 }));
 
 // Listen for 401 events from apiFetch
 if (typeof window !== 'undefined') {
   window.addEventListener('auth:unauthorized', () => {
-    useAuthStore.setState({ user: null, page: 'login', loading: false });
+    useAuthStore.setState({ user: null, loading: false });
   });
 }

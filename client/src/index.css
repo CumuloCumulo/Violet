@@ -213,6 +213,7 @@ input::placeholder {
   text-align: center;
   width: 100%;
   z-index: 10;
+  pointer-events: none;
 }
 
 .profile-canvas {
@@ -1924,4 +1925,162 @@ input::placeholder {
   border: none;
   box-shadow: 0 6px 20px rgba(140, 160, 255, 0.3);
   font-weight: 500;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Notification Center (ntf- prefix)
+   ══════════════════════════════════════════════════════════════ */
+
+.ntf-page {
+  position: relative;
+}
+
+.ntf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.ntf-back-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #7a829a;
+  transition: color 0.2s;
+}
+.ntf-back-btn:hover { color: #3a405a; }
+
+.ntf-header-actions {
+  min-width: 80px;
+  text-align: right;
+}
+
+.ntf-mark-all-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #8ca0ff;
+  transition: color 0.2s;
+  padding: 0;
+}
+.ntf-mark-all-btn:hover { color: #6b82f0; }
+
+.ntf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ntf-group {
+  margin-bottom: 1rem;
+}
+
+.ntf-group-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9e98aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  padding-left: 4px;
+}
+
+.ntf-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  position: relative;
+}
+.ntf-card:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+.ntf-card-unread {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(140, 160, 255, 0.2);
+}
+
+.ntf-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.ntf-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ntf-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.ntf-card-content {
+  font-size: 12px;
+  color: #9e98aa;
+  margin: 2px 0 0 0;
+}
+
+.ntf-card-time {
+  font-size: 11px;
+  color: #b0b5c9;
+  display: block;
+  margin-top: 2px;
+}
+
+.ntf-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ntf-empty {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.ntf-empty-card {
+  text-align: center;
+  padding: 4rem 0;
+}
+.ntf-empty-card > div,
+.ntf-empty-card > p {
+  display: block;
+}
+
+.ntf-load-more {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.ntf-load-more-btn {
+  background: none;
+  border: 1px solid rgba(140, 160, 255, 0.2);
+  border-radius: 20px;
+  padding: 6px 20px;
+  font-size: 12px;
+  color: #8ca0ff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ntf-load-more-btn:hover {
+  background: rgba(140, 160, 255, 0.08);
 }

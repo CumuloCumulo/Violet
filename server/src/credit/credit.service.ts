@@ -60,6 +60,26 @@ export class CreditService {
     return { balance: updated.creditScore, reward: CHECKIN_REWARD };
   }
 
+  async getCheckinStatus(userId: string) {
+    const now = new Date();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    const existingCheckin = await this.prisma.checkinRecord.findFirst({
+      where: {
+        userId,
+        createdAt: { gte: todayStart, lt: todayEnd },
+      },
+    });
+
+    return { hasCheckedIn: !!existingCheckin, reward: CHECKIN_REWARD };
+  }
+
   async deductCredit(userId: string, amount: number): Promise<number> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

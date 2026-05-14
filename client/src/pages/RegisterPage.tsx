@@ -1,22 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuthStore } from '../stores/authStore';
 
+const EMAIL_SUFFIX = '@smail.nju.edu.cn';
+
 export function RegisterPage() {
   const register = useAuthStore((s) => s.register);
-  const setPage = useAuthStore((s) => s.setPage);
-  const [email, setEmail] = useState('');
+  const sendCode = useAuthStore((s) => s.sendCode);
+  const navigate = useNavigate();
+  const [studentId, setStudentId] = useState('');
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const email = studentId.trim() + EMAIL_SUFFIX;
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const handleSendCode = async () => {
+    setError('');
+    if (!studentId.trim()) {
+      setError('请输入学号');
+      return;
+    }
+    try {
+      await sendCode(email);
+      setCountdown(60);
+      timerRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (e: any) {
+      setError(e.message ?? '发送验证码失败');
+    }
+  };
 
   const handleRegister = async () => {
     setError('');
 
-    if (!email.endsWith('@smail.nju.edu.cn')) {
-      setError('仅支持南大 smail 邮箱注册');
+    if (!studentId.trim()) {
+      setError('请输入学号');
+      return;
+    }
+    if (!code.trim()) {
+      setError('请输入验证码');
       return;
     }
     if (nickname.trim().length < 1) {
@@ -34,7 +76,8 @@ export function RegisterPage() {
 
     setSubmitting(true);
     try {
-      await register(email.trim(), nickname.trim(), password);
+      await register(email, nickname.trim(), password, code.trim());
+      navigate('/setup');
     } catch (e: any) {
       setError(e.message ?? '注册失败');
     } finally {
@@ -42,7 +85,8 @@ export function RegisterPage() {
     }
   };
 
-  const canSubmit = email.trim() && nickname.trim() && password && confirmPassword && !submitting;
+  const canSubmit =
+    studentId.trim() && code.trim() && nickname.trim() && password && confirmPassword && !submitting;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative">
@@ -73,16 +117,61 @@ export function RegisterPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
         >
+          {/* Student ID + Send Code */}
           <div>
             <label className="block text-xs font-light mb-1.5" style={{ color: '#7a829a' }}>
-              南大邮箱
+              南大学号
+            </label>
+            <div className="flex gap-2">
+              <div
+                className="flex-1 flex items-center h-11 rounded-2xl overflow-hidden"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.5)',
+                  border: '1px solid rgba(140, 160, 255, 0.15)',
+                }}
+              >
+                <input
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder="学号"
+                  className="flex-1 h-full px-4 text-sm outline-none bg-transparent"
+                  style={{ color: '#3a405a' }}
+                />
+                <span
+                  className="shrink-0 px-3 text-xs whitespace-nowrap"
+                  style={{ color: '#8ca0ff' }}
+                >
+                  {EMAIL_SUFFIX}
+                </span>
+              </div>
+              <button
+                onClick={handleSendCode}
+                disabled={countdown > 0 || !studentId.trim()}
+                className="shrink-0 h-11 px-3 rounded-2xl text-xs font-medium transition-all disabled:opacity-30"
+                style={{
+                  background: countdown > 0 ? 'rgba(140, 160, 255, 0.1)' : '#8ca0ff',
+                  color: countdown > 0 ? '#8ca0ff' : '#ffffff',
+                  border: '1px solid rgba(140, 160, 255, 0.15)',
+                }}
+              >
+                {countdown > 0 ? `${countdown}s` : '发送验证码'}
+              </button>
+            </div>
+          </div>
+
+          {/* Verification Code */}
+          <div>
+            <label className="block text-xs font-light mb-1.5" style={{ color: '#7a829a' }}>
+              验证码
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@smail.nju.edu.cn"
-              className="w-full h-11 px-4 rounded-2xl text-sm outline-none transition-all"
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="输入邮箱收到的验证码"
+              maxLength={6}
+              className="w-full h-11 px-4 rounded-2xl text-sm outline-none transition-all tracking-widest"
               style={{
                 background: 'rgba(255, 255, 255, 0.5)',
                 color: '#3a405a',
@@ -172,7 +261,7 @@ export function RegisterPage() {
 
           <div className="text-center pt-1">
             <button
-              onClick={() => setPage('login')}
+              onClick={() => navigate('/login')}
               className="text-xs font-light transition-colors"
               style={{ color: '#7a829a' }}
             >

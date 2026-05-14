@@ -1,13 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ChatPage } from './pages/ChatPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ProfileSetupPage } from './pages/ProfileSetupPage';
 import { DiscoveryPage } from './pages/DiscoveryPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { WingmanHallPage } from './pages/WingmanHallPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 import { useAuthStore } from './stores/authStore';
 import { useDevData, type DevUser, type DevRelationship } from './hooks/useDevData';
 
@@ -33,6 +36,117 @@ function App() {
   );
 }
 
+// ─── Prod Mode: URL-based routing ────────────────────────────
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  const fetchMe = useAuthStore((s) => s.fetchMe);
+
+  useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm" style={{ color: '#9e98aa' }}>加载中...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect to setup if profile not completed
+  if (!user.nickname) {
+    const currentPath = window.location.pathname;
+    if (currentPath !== '/setup') {
+      return <Navigate to="/setup" replace />;
+    }
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  if (!user?.roles.includes('ADMIN')) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+}
+
+function ProdApp() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route
+        path="/setup"
+        element={
+          <ProtectedRoute>
+            <ProfileSetupPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <DiscoveryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat/:relationshipId"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminDashboardPage />
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/wingman-hall"
+        element={
+          <ProtectedRoute>
+            <WingmanHallPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 // ─── DEV Mode: Selection-based Login (preserved) ──────────────
 
 function DevApp() {
@@ -43,18 +157,18 @@ function DevApp() {
   const [started, setStarted] = useState(false);
   const [useRealAuth, setUseRealAuth] = useState(false);
 
-  // Use authStore page state for new pages
-  const page = useAuthStore((s) => s.page);
-  const authUser = useAuthStore((s) => s.user);
-  const chatRelationshipId = useAuthStore((s) => s.chatRelationshipId);
+  const navigate = useNavigate();
   const fetchMe = useAuthStore((s) => s.fetchMe);
-  const exitChat = useAuthStore((s) => s.exitChat);
-  const setPage = useAuthStore((s) => s.setPage);
 
   // Try to resume session
   useEffect(() => {
     fetchMe();
   }, [fetchMe]);
+
+  // If user chose real auth flow, let react-router handle it
+  if (useRealAuth) {
+    return <ProdApp />;
+  }
 
   const filteredUsers = useMemo(() => {
     if (!identity) return [];
@@ -96,35 +210,6 @@ function DevApp() {
       chatPrivateTargetId: clientUser?.id,
     };
   }, [identity, selectedRel, selectedUser]);
-
-  // ── All hooks above this line. Early returns below. ──
-
-  // If in chat mode (from discovery acceptance)
-  if (page === 'chat' && authUser && chatRelationshipId) {
-    return (
-      <ChatPage
-        userId={authUser.id}
-        relationshipId={chatRelationshipId}
-        onExit={exitChat}
-      />
-    );
-  }
-
-  // If authenticated, show production-style pages
-  if (authUser && page !== 'login' && page !== 'register') {
-    if (page === 'profile-setup') return <ProfileSetupPage />;
-    if (page === 'profile') return <ProfilePage />;
-    if (page === 'admin') return <AdminDashboardPage />;
-    if (page === 'wingman-hall') return <WingmanHallPage />;
-    if (page === 'discovery') return <DiscoveryPage />;
-  }
-
-  // If user chose real auth flow
-  if (useRealAuth) {
-    if (page === 'register') return <><AmbientBackground /><NoiseOverlay /><RegisterPage /></>;
-    if (page === 'discovery' && authUser) return <><AmbientBackground /><NoiseOverlay /><DiscoveryPage /></>;
-    return <><AmbientBackground /><NoiseOverlay /><LoginPage /></>;
-  }
 
   if (started && chatUserId && chatRelationshipIdDev) {
     return (
@@ -184,7 +269,7 @@ function DevApp() {
           </motion.span>
           <div className="mt-4">
             <button
-              onClick={() => { setUseRealAuth(true); setPage('login'); }}
+              onClick={() => { setUseRealAuth(true); navigate('/login'); }}
               className="text-xs transition-colors"
               style={{ color: '#8ca0ff' }}
             >
@@ -289,48 +374,6 @@ function DevApp() {
       </div>
     </div>
   );
-}
-
-// ─── Prod Mode: Auth-based routing ───────────────────────────
-
-function ProdApp() {
-  const page = useAuthStore((s) => s.page);
-  const user = useAuthStore((s) => s.user);
-  const loading = useAuthStore((s) => s.loading);
-  const chatRelationshipId = useAuthStore((s) => s.chatRelationshipId);
-  const fetchMe = useAuthStore((s) => s.fetchMe);
-  const exitChat = useAuthStore((s) => s.exitChat);
-
-  useEffect(() => {
-    fetchMe();
-  }, [fetchMe]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-sm" style={{ color: '#9e98aa' }}>加载中...</p>
-      </div>
-    );
-  }
-
-  if (page === 'chat' && user && chatRelationshipId) {
-    return (
-      <ChatPage
-        userId={user.id}
-        relationshipId={chatRelationshipId}
-        onExit={exitChat}
-      />
-    );
-  }
-
-  if (page === 'register') return <RegisterPage />;
-  if (page === 'profile-setup') return <ProfileSetupPage />;
-  if (page === 'profile') return <ProfilePage />;
-  if (page === 'admin' && user?.roles.includes('ADMIN')) return <AdminDashboardPage />;
-  if (page === 'wingman-hall') return <WingmanHallPage />;
-  if (page === 'discovery' && user) return <DiscoveryPage />;
-
-  return <LoginPage />;
 }
 
 // ─── Shared UI Components ──────────────────────────────────────

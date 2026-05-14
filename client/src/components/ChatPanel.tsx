@@ -34,6 +34,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const rawMessages = useChatStore((s) => s.messages[relationshipId]);
   const messages = rawMessages ?? [];
+  const room = useChatStore((s) => s.rooms[relationshipId]);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const draftMessage = useChatStore((s) => s.draftMessage);
   const confirmMessage = useChatStore((s) => s.confirmMessage);
@@ -140,6 +141,8 @@ export function ChatPanel({
               onConfirm={() => confirmMessage(msg.id, relationshipId)}
               onReject={() => rejectMessage(msg.id, relationshipId)}
               accentColor={accentColor}
+              messageType={messageType}
+              room={room}
             />
           ))}
         </AnimatePresence>
@@ -167,6 +170,8 @@ interface MessageBubbleProps {
   onConfirm: () => void;
   onReject: () => void;
   accentColor?: 'violet' | 'green';
+  messageType?: 'MAIN' | 'PRIVATE';
+  room?: { client1Id: string | null; client2Id: string | null };
 }
 
 function MessageBubble({
@@ -176,6 +181,8 @@ function MessageBubble({
   onConfirm,
   onReject,
   accentColor = 'violet',
+  messageType = 'MAIN',
+  room,
 }: MessageBubbleProps) {
   const isSystem = message.type === 'SYSTEM';
   const isPending = message.type === 'PENDING';
@@ -233,9 +240,9 @@ function MessageBubble({
         transition={{ duration: 0.3 }}
       >
         <div className="max-w-[75%]">
-          {!isSelf && message.sender && (
+          {shouldShowSender(message, messageType, isSelf, room) && (
             <span className="text-[13px] mb-0.5 block" style={{ color: '#7a829a' }}>
-              {message.sender.nickname}
+              {message.sender!.nickname}
             </span>
           )}
           <div
@@ -314,9 +321,9 @@ function MessageBubble({
       transition={{ duration: 0.3 }}
     >
       <div className="max-w-[75%]">
-        {!isSelf && message.sender && (
+        {shouldShowSender(message, messageType, isSelf, room) && (
           <span className="text-xs mb-0.5 block" style={{ color: '#7a829a' }}>
-            {message.sender.nickname}
+            {message.sender!.nickname}
           </span>
         )}
         <div
@@ -351,10 +358,39 @@ function MessageBubble({
   );
 }
 
+/** In MAIN chat, hide sender nickname if sender is a wingman (not a client) */
+function shouldShowSender(
+  message: ChatMessage,
+  messageType: 'MAIN' | 'PRIVATE',
+  isSelf: boolean,
+  room: { client1Id: string | null; client2Id: string | null } | undefined,
+): boolean {
+  if (isSelf || !message.sender) return false;
+  if (message.isSystem) return false;
+  if (messageType === 'PRIVATE') return true;
+  // MAIN chat: only show nickname if sender is one of the two clients
+  if (!room) return true;
+  const isClient = message.senderId === room.client1Id || message.senderId === room.client2Id;
+  return isClient;
+}
+
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const time = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+  if (msgDay.getTime() >= today.getTime()) {
+    return time;
+  } else if (msgDay.getTime() >= yesterday.getTime()) {
+    return `昨天 ${time}`;
+  } else if (now.getFullYear() === date.getFullYear()) {
+    return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`;
+  } else {
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${time}`;
+  }
 }

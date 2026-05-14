@@ -8,11 +8,13 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { OnEvent } from '@nestjs/event-emitter';
 import * as jwt from 'jsonwebtoken';
 import { ChatService } from './chat.service.js';
 import { RoomService } from './room.service.js';
 import { PresenceService } from './presence.service.js';
 import { ChatLifecycleService } from './chat-lifecycle.service.js';
+import type { NotificationPayload } from '../notification/notification.service.js';
 
 const JWT_SECRET = process.env['JWT_SECRET'] ?? 'violet-dev-secret';
 
@@ -688,6 +690,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           side,
           mode,
         });
+      }
+    }
+  }
+
+  /**
+   * Listen for notification.created events emitted by NotificationService
+   * and push to the target user via WebSocket if online.
+   */
+  @OnEvent('notification.created')
+  async handleNotificationCreated(notification: NotificationPayload) {
+    const sockets = await this.server.fetchSockets();
+    for (const sock of sockets) {
+      const sockData = (sock as any).data;
+      if (sockData?.userId === notification.userId) {
+        this.server.to(sock.id).emit('notification', notification);
       }
     }
   }

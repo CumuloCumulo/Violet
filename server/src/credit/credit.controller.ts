@@ -13,6 +13,11 @@ export class CreditController {
     return { balance };
   }
 
+  @Get('checkin/status')
+  async getCheckinStatus(@Req() req: any) {
+    return this.creditService.getCheckinStatus(req.user.userId);
+  }
+
   @Post('checkin')
   async checkin(@Req() req: any) {
     return this.creditService.checkin(req.user.userId);
