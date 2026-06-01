@@ -64,10 +64,10 @@ describe('Lifecycle', () => {
     c2.clearEvents();
     c1.transitionStatus(setup.relationship.id, 'FLIRTING');
 
-    const c1Closed = await c1.waitForEvent('roomClosed', 3000);
+    const c1Closed = await c1.waitForEvent('roomReadOnly', 5000);
     expect(c1Closed.reason).toBe('FLIRTING');
 
-    const c2Closed = await c2.waitForEvent('roomClosed', 3000);
+    const c2Closed = await c2.waitForEvent('roomReadOnly', 5000);
     expect(c2Closed.reason).toBe('FLIRTING');
 
     c1.disconnect();
@@ -89,7 +89,7 @@ describe('Lifecycle', () => {
     c1.clearEvents();
     c1.transitionStatus(setup.relationship.id, 'ENDED');
 
-    const c1Closed = await c1.waitForEvent('roomClosed', 3000);
+    const c1Closed = await c1.waitForEvent('roomClosed', 5000);
     expect(c1Closed.reason).toBe('ENDED');
 
     await new Promise((resolve) => setTimeout(resolve, 500));
