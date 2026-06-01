@@ -31,11 +31,16 @@ export class TestApp {
   async cleanup() {
     // Clean up test data in reverse dependency order
     await this.prisma.message.deleteMany({});
+    await this.prisma.notification.deleteMany({});
+    await this.prisma.matchRequest.deleteMany({});
     await this.prisma.rating.deleteMany({});
     await this.prisma.wingmanAssignment.deleteMany({});
     await this.prisma.wingmanTask.deleteMany({});
+    await this.prisma.wingmanApplication.deleteMany({});
     await this.prisma.postReply.deleteMany({});
     await this.prisma.post.deleteMany({});
+    await this.prisma.checkinRecord.deleteMany({});
+    await this.prisma.creditLog.deleteMany({});
     await this.prisma.relationship.deleteMany({});
     await this.prisma.user.deleteMany({});
   }

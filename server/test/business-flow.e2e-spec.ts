@@ -215,7 +215,7 @@ describe('Business Flow E2E', () => {
       tokenA = jwt.sign({ sub: userAId, email: 'a@test.com' }, secret, {
         expiresIn: '7d',
       });
-      tokenB = jwt.sign({ sub: userBId, email: 'b@test.com' }, secret, {
+      _tokenB = jwt.sign({ sub: userBId, email: 'b@test.com' }, secret, {
         expiresIn: '7d',
       });
     });
