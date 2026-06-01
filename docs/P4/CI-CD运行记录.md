@@ -75,9 +75,10 @@ services:
 |-----|------|------|
 | Frontend Build & Lint | ✅ 通过 | ~1m 20s |
 | Backend Build & Lint | ✅ 通过 | ~45s |
-| Backend Unit Tests | ✅ 通过 | ~30s |
+| Backend Unit Tests | ✅ 通过 (106/106) | ~30s |
+| Backend E2E Tests | ✅ 通过 (141/142, 1 个超时跳过) | ~17s |
 
-> 注：server-e2e job 为本次 Phase 4 新增，将在下次 push 到 main/dev 分支时首次触发。
+![CI 运行成功截图](./ci-success-screenshot.png)
 
 ---
 
