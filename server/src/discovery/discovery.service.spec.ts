@@ -1,5 +1,10 @@
 import { DiscoveryService } from './discovery.service';
-import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 
 describe('DiscoveryService', () => {
   let service: DiscoveryService;
@@ -30,6 +35,7 @@ describe('DiscoveryService', () => {
       wingmanAssignment: {
         findMany: vi.fn().mockResolvedValue([]),
       },
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       $transaction: vi.fn((fn) => fn(mockPrisma)),
     };
 
@@ -41,7 +47,11 @@ describe('DiscoveryService', () => {
       createNotification: vi.fn(),
     };
 
-    service = new DiscoveryService(mockPrisma, mockCreditService, mockNotificationService);
+    service = new DiscoveryService(
+      mockPrisma,
+      mockCreditService,
+      mockNotificationService,
+    );
   });
 
   describe('listUsers', () => {
@@ -124,7 +134,10 @@ describe('DiscoveryService', () => {
       expect(result.status).toBe('PENDING');
       expect(mockCreditService.deductCredit).toHaveBeenCalledWith('user1', 5);
       expect(mockNotificationService.createNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'user2', type: 'MATCH_REQUEST_RECEIVED' }),
+        expect.objectContaining({
+          userId: 'user2',
+          type: 'MATCH_REQUEST_RECEIVED',
+        }),
       );
     });
   });
@@ -173,7 +186,10 @@ describe('DiscoveryService', () => {
         createdAt: new Date(),
       };
       mockPrisma.matchRequest.findUnique.mockResolvedValue(request);
-      mockPrisma.matchRequest.update.mockResolvedValue({ ...request, status: 'ACCEPTED' });
+      mockPrisma.matchRequest.update.mockResolvedValue({
+        ...request,
+        status: 'ACCEPTED',
+      });
       mockPrisma.relationship.create.mockResolvedValue({
         id: 'rel1',
         user1Id: 'user1',
@@ -187,7 +203,10 @@ describe('DiscoveryService', () => {
 
       expect(result.relationship.status).toBe('ICEBREAKING');
       expect(mockNotificationService.createNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'user1', type: 'MATCH_REQUEST_ACCEPTED' }),
+        expect.objectContaining({
+          userId: 'user1',
+          type: 'MATCH_REQUEST_ACCEPTED',
+        }),
       );
     });
   });
@@ -200,14 +219,20 @@ describe('DiscoveryService', () => {
         toUserId: 'user2',
         status: 'PENDING',
       });
-      mockPrisma.matchRequest.update.mockResolvedValue({ id: 'req1', status: 'REJECTED' });
+      mockPrisma.matchRequest.update.mockResolvedValue({
+        id: 'req1',
+        status: 'REJECTED',
+      });
       mockNotificationService.createNotification.mockResolvedValue({});
 
       const result = await service.rejectMatchRequest('req1', 'user2');
 
       expect(result.status).toBe('REJECTED');
       expect(mockNotificationService.createNotification).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'user1', type: 'MATCH_REQUEST_REJECTED' }),
+        expect.objectContaining({
+          userId: 'user1',
+          type: 'MATCH_REQUEST_REJECTED',
+        }),
       );
     });
   });

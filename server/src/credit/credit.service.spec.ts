@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { CreditService } from './credit.service';
 import { ConflictException, ForbiddenException } from '@nestjs/common';
 
@@ -16,7 +17,8 @@ describe('CreditService', () => {
         findFirst: vi.fn(),
         create: vi.fn(),
       },
-      $transaction: vi.fn((ops) => {
+
+      $transaction: vi.fn((ops: any) => {
         if (Array.isArray(ops)) return Promise.all(ops);
         return ops(mockPrisma);
       }),
@@ -45,7 +47,9 @@ describe('CreditService', () => {
     it('should reject non-existent user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.checkin('nonexistent')).rejects.toThrow(ConflictException);
+      await expect(service.checkin('nonexistent')).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should reject duplicate checkin', async () => {
@@ -89,13 +93,17 @@ describe('CreditService', () => {
     it('should reject insufficient credit', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({ creditScore: 3 });
 
-      await expect(service.deductCredit('user1', 5)).rejects.toThrow(ForbiddenException);
+      await expect(service.deductCredit('user1', 5)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should reject non-existent user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.deductCredit('nonexistent', 5)).rejects.toThrow(ForbiddenException);
+      await expect(service.deductCredit('nonexistent', 5)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should deduct credit successfully', async () => {
@@ -110,7 +118,9 @@ describe('CreditService', () => {
       mockPrisma.user.findUnique.mockResolvedValue({ creditScore: 20 });
       mockPrisma.user.updateMany.mockResolvedValue({ count: 0 });
 
-      await expect(service.deductCredit('user1', 5)).rejects.toThrow(ForbiddenException);
+      await expect(service.deductCredit('user1', 5)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

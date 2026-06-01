@@ -112,7 +112,7 @@ jobs:
           cache-dependency-path: server/pnpm-lock.yaml
       - run: pnpm install
       - run: npx prisma generate
-      - run: npx prisma migrate deploy
+      - run: npx prisma db push
         env:
           DATABASE_URL: postgresql://violet:violet2026@localhost:5432/violet_test?schema=public
       - run: pnpm run test:e2e

@@ -1,6 +1,6 @@
 import { TestApp } from './utils/test-app';
 import { Fixture } from './utils/fixture';
-import * as request from 'supertest';
+import request from 'supertest';
 
 describe('Business Flow E2E', () => {
   let app: TestApp;
@@ -195,7 +195,7 @@ describe('Business Flow E2E', () => {
    */
   describe('Error Flow 2: Business Logic Conflicts', () => {
     let tokenA: string;
-    let tokenB: string;
+    let _tokenB: string;
     let userAId: string;
     let userBId: string;
 
@@ -212,8 +212,12 @@ describe('Business Flow E2E', () => {
 
       const jwt = await import('jsonwebtoken');
       const secret = process.env['JWT_SECRET'] ?? 'violet-dev-secret';
-      tokenA = jwt.sign({ sub: userAId, email: 'a@test.com' }, secret, { expiresIn: '7d' });
-      tokenB = jwt.sign({ sub: userBId, email: 'b@test.com' }, secret, { expiresIn: '7d' });
+      tokenA = jwt.sign({ sub: userAId, email: 'a@test.com' }, secret, {
+        expiresIn: '7d',
+      });
+      tokenB = jwt.sign({ sub: userBId, email: 'b@test.com' }, secret, {
+        expiresIn: '7d',
+      });
     });
 
     it('should reject self-match', async () => {

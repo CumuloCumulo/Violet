@@ -64,7 +64,7 @@ describe('NotificationService', () => {
       };
       mockPrisma.notification.create.mockResolvedValue(notification);
 
-      const result = await service.createNotification({
+      const _result = await service.createNotification({
         userId: 'user1',
         type: 'MATCH_REQUEST',
         title: 'New match',
